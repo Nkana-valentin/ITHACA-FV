@@ -81,7 +81,7 @@ fsiBasic::fsiBasic(int argc, char* argv[])
         //pointVectorField & PointDisplacement = const_cast<pointVectorField&>(mesh.objectRegistry::lookupObject<pointVectorField>("pointDisplacement"));               
 }
 
-void fsiBasic::truthSolve3(List<scalar> mu_now)
+void fsiBasic::truthSolve3(List<scalar> mu_now, fileName folder)
 {
 
     Time& runTime = _runTime();
@@ -115,6 +115,9 @@ void fsiBasic::truthSolve3(List<scalar> mu_now)
     // Export and store the initial conditions for velocity and pressure
     ITHACAstream::exportSolution(U, name(counter), folder);
     ITHACAstream::exportSolution(p, name(counter), folder);
+    ITHACAstream::writePoints(meshPtr().points(), folder, name(counter)+"/polyMesh");
+
+    
     std::ofstream of(folder + name(counter) + "/" +
     	     runTime.timeName());
     Ufield.append(U.clone());
@@ -190,6 +193,7 @@ void fsiBasic::truthSolve3(List<scalar> mu_now)
         {
             ITHACAstream::exportSolution(U, name(counter), folder);
             ITHACAstream::exportSolution(p, name(counter), folder);
+            ITHACAstream::writePoints(meshPtr().points(), folder, name(counter)+"/polyMesh");
             std::ofstream of(folder + name(counter) + "/" +
                              runTime.timeName());
             Ufield.append(U.clone());
@@ -231,31 +235,28 @@ void fsiBasic::liftSolve3()
     {
         //std::cout << "345 my lift solve "<< std::endl;
         Time& runTime = _runTime();
-        std::cout << "???????????? 234 my lift solve ???????????????????? "<< std::endl;
+        //std::cout << "???????????? 234 my lift solve ???????????????????? "<< std::endl;
         Foam::dynamicFvMesh& mesh = meshPtr();
-        std::cout << "***********236 my lift solve********* "<< std::endl;
+        //std::cout << "***********236 my lift solve********* "<< std::endl;
         volScalarField& p = _p();
         volVectorField& U = _U();
-        std::cout << "239 my lift solve "<< std::endl;
-        //Foam::dynamicFvMesh& mesh = meshPtr();
-        std::cout << "351 my lift solve "<< std::endl;
         surfaceScalarField& phi = _phi();
         //#include "initContinuityErrs.H"
         fv::options& fvOptions = _fvOptions();
         pimpleControl& pimple = _pimple();
         IOMRFZoneList& MRF = _MRF();
-        std::cout << "354 my lift solve "<< std::endl;
+        //std::cout << "354 my lift solve "<< std::endl;
 
         label BCind = inletIndex(k, 0);
         volVectorField Ulift("Ulift" + name(k), U);
         instantList Times = runTime.times();
         runTime.setTime(Times[1], 1);
         pisoControl piso(mesh);
-        Info << "Solving a lifting Problem" << endl;
+        //Info << "Solving a lifting Problem" << endl;
         Vector<double> v1(0, 0, 0);
         v1[inletIndex(k, 1)] = 1;
         Vector<double> v0(0, 0, 0);
-        std::cout << "365 my lift solve "<< std::endl;
+        //std::cout << "365 my lift solve "<< std::endl;
 
         for (label j = 0; j < U.boundaryField().size(); j++)
         {
@@ -274,7 +275,7 @@ void fsiBasic::liftSolve3()
             assignIF(Ulift, v0);
             phi = linearInterpolate(Ulift) & mesh.Sf();
         }
-         std::cout << "277 my lift solve "<< std::endl;
+         //std::cout << "277 my lift solve "<< std::endl;
 
         Info << "Constructing velocity pimple field Phi\n" << endl;
         volScalarField Phi
