@@ -84,7 +84,7 @@ class fsiBasic: public unsteadyNS
         /// pimpleControl
         autoPtr<pimpleControl> _pimple;
         // Dummy variables to transform createFields.H into a class
-        /* autoPtr<volScalarField> _p;
+        /*autoPtr<volScalarField> _p;
         autoPtr<volVectorField> _U;
          /// Initial fields (for restart purposes)
         autoPtr<volScalarField> _p0;
@@ -101,13 +101,13 @@ class fsiBasic: public unsteadyNS
         /// List of pointers used to form the pressure snapshots matrix
         PtrList<volScalarField> Pfield;
         /// List of pointers used to form the velocity snapshots matrix
-        PtrList<volVectorField> Ufield;
+        PtrList<volVectorField> Ufield;*/
         /// List of pointers used to form the pressure modes
-        PtrList<volScalarField> Pmodes;
+        PtrList<volScalarField> pmodes;
         /// List of pointers used to form the velocity modes
-        PtrList<volVectorField> Umodes;*/
+        PtrList<volVectorField> umodes;
         /// List of pointers used pointDisplacement modes
-        PtrList<pointVectorField> PDfiedl;
+        PtrList<pointVectorField> DFields;
         /// List scalar for access the centerofmass
         List<scalar> centerofmassx;
         List<scalar> centerofmassy;

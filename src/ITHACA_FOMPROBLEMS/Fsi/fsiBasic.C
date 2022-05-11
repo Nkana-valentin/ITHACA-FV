@@ -54,7 +54,6 @@ fsiBasic::fsiBasic(int argc, char* argv[])
              << runTime.timeName() << nl << endl;
 
         meshPtr = autoPtr<dynamicFvMesh> (dynamicFvMesh::New(args, runTime));
-
         dynamicFvMesh& mesh = meshPtr();
         _pimple = autoPtr<pimpleControl>
                    (
@@ -77,7 +76,7 @@ fsiBasic::fsiBasic(int argc, char* argv[])
         );
 #include "createFields.H" 
         para = ITHACAparameters::getInstance(mesh, runTime);   
-        //point0 =   meshPtr().points();       
+              
 }
 
 void fsiBasic::truthSolve3(List<scalar> mu_now, fileName folder)
@@ -124,17 +123,18 @@ void fsiBasic::truthSolve3(List<scalar> mu_now, fileName folder)
 
     turbulence->validate();
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-    // Export and store the initial conditions for velocity and pressure
-    ITHACAstream::exportSolution(U, name(counter), folder);
-    ITHACAstream::exportSolution(p, name(counter), folder);
-    ITHACAstream::exportSolution(sDRBMS.pointDisplacement(), name(counter), folder);
-    ITHACAstream::writePoints(meshPtr().points(), folder, name(counter) + "/polyMesh/");
+    // // Export and store the initial conditions for velocity and pressure
+    // ITHACAstream::exportSolution(U, name(counter), folder);
+    // ITHACAstream::exportSolution(p, name(counter), folder);
+    // ITHACAstream::exportSolution(sDRBMS.pointDisplacement(), name(counter), folder);
+    // ITHACAstream::writePoints(meshPtr().points(), folder, name(counter) + "/polyMesh/");
 
-    std::ofstream of(folder + name(counter) + "/" + runTime.timeName());
-    Ufield.append(U.clone());
-    Pfield.append(p.clone());
-    counter++;
-    nextWrite += writeEvery;
+    // std::ofstream of(folder + name(counter) + "/" + runTime.timeName());
+    // Ufield.append(U.clone());
+    // Pfield.append(p.clone());
+    // DFields.append(sDRBMS.pointDisplacement().clone());
+    // counter++;
+    // nextWrite += writeEvery;
 
     Info<< "\nStarting time loop\n" << endl;
 
@@ -410,9 +410,9 @@ void fsiBasic::restart()
     Time& runTime = _runTime();
     runTime.setTime(0, 1);
     // meshPtr().movePoints(point0);
-    // meshPtr().resetMotion();
-    //meshPtr.clear();
-    meshPtr().movePoints(meshPtr().points0());
+    meshPtr().resetMotion();
+    //meshPtr().clear();
+    //meshPtr().movePoints(points0());
     _pimple.clear();
     Foam::dynamicFvMesh& mesh = meshPtr();
     _pimple = autoPtr<pimpleControl>
@@ -423,12 +423,11 @@ void fsiBasic::restart()
                        )
                );
 
-    _p() = _p0();
-    _U() = _U0();
-    _phi() = _phi0();
+    // _p() = _p0();
+    // _U() = _U0();
+    // _phi() = _phi0();
 
     //pimpleControl& pimple = _pimple();
-    pimpleControl& pimple = _pimple();
     
 #include "createFields.H" 
 }
