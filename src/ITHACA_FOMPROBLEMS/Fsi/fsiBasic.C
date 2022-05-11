@@ -208,11 +208,7 @@ void fsiBasic::truthSolve3(List<scalar> mu_now, fileName folder)
                 turbulence->correct();
             }
         }
-        // runTime.write();
-
-        // runTime.printExecutionTime(Info);
         
-    //*****************************************end of pimpleFoam*****************************************
         if (checkWrite(runTime))
         {
             ITHACAstream::exportSolution(U, name(counter), folder);
@@ -415,7 +411,8 @@ void fsiBasic::restart()
     runTime.setTime(0, 1);
     // meshPtr().movePoints(point0);
     // meshPtr().resetMotion();
-    meshPtr.clear();
+    //meshPtr.clear();
+    meshPtr().movePoints(meshPtr().points0());
     _pimple.clear();
     Foam::dynamicFvMesh& mesh = meshPtr();
     _pimple = autoPtr<pimpleControl>
