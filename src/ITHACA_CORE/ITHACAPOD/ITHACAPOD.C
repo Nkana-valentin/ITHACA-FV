@@ -128,13 +128,18 @@ void getModes(
         }
 
         Eigen::MatrixXd SnapMatrix = Foam2Eigen::PtrList2Eigen(snapshots);
+
         List<Eigen::MatrixXd> SnapMatrixBC = Foam2Eigen::PtrList2EigenBC(snapshots);
+  
+
+      
         label NBC = snapshots[0].boundaryField().size();
         Eigen::MatrixXd _corMatrix;
 
         if (PODnorm == "L2")
         {
             _corMatrix = ITHACAutilities::getMassMatrix(snapshots);
+          
         }
         else if (PODnorm == "Frobenius")
         {
@@ -193,6 +198,7 @@ void getModes(
         Eigen::MatrixXd modesEig = (SnapMatrix * eigenVectoreig);
         // Computing Normalization factors of the POD Modes
         Eigen::VectorXd V = ITHACAutilities::getMassMatrixFV(snapshots[0]);
+      
         Eigen::MatrixXd normFact(nmodes, 1);
 
         for (label i = 0; i < nmodes; i++)
@@ -249,12 +255,12 @@ void getModes(
                 modesEigBC[j].col(i) = modesEigBC[j].col(i).array() / normFact(i, 0);
             }
         }
-
         for (label i = 0; i < modes.size(); i++)
         {
             GeometricField<Type, PatchField, GeoMesh>  tmp2(snapshots[0].name(),
                     snapshots[0]);
             Eigen::VectorXd vec = modesEig.col(i);
+          
             tmp2 = Foam2Eigen::Eigen2field(tmp2, vec, correctBC);
 
             for (label k = 0; k < NBC; k++)
@@ -321,6 +327,11 @@ template void getModes(
 
 template void getModes(
     PtrList<surfaceScalarField>& snapshots, PtrList<surfaceScalarField>& modes,
+    word fieldName, bool podex, bool supex, bool sup, label nmodes,
+    bool correctBC);
+
+template void getModes(
+    PtrList<pointVectorField>& snapshots, PtrList<pointVectorField>& modes,
     word fieldName, bool podex, bool supex, bool sup, label nmodes,
     bool correctBC);
 
@@ -560,6 +571,11 @@ template void getModesSVD(
 
 template void getModesSVD(
     PtrList<volVectorField>& snapshots, PtrList<volVectorField>& modes,
+    word fieldName, bool podex, bool supex, bool sup, label nmodes,
+    bool correctBC);
+
+template void getModesSVD(
+    PtrList<pointVectorField>& snapshots, PtrList<pointVectorField>& modes,
     word fieldName, bool podex, bool supex, bool sup, label nmodes,
     bool correctBC);
 
@@ -1156,6 +1172,11 @@ template void getModes(
 
 template void getModes(
     PtrList<volVectorField>& snapshots, PtrList<volVectorField>& modes,
+    PtrList<volScalarField>& Volumes, word fieldName, bool podex, bool supex,
+    bool sup, label nmodes, bool correctBC);
+
+template void getModes(
+    PtrList<pointVectorField>& snapshots, PtrList<pointVectorField>& modes,
     PtrList<volScalarField>& Volumes, word fieldName, bool podex, bool supex,
     bool sup, label nmodes, bool correctBC);
 

@@ -157,6 +157,10 @@ void assignBC(GeometricField<scalar, fvPatchField, volMesh>& s, label BC_ind,
 void assignBC(GeometricField<scalar, fvPatchField, volMesh>& s, label BC_ind,
               Eigen::MatrixXd valueVec);
 
+
+void assignBC(GeometricField<vector, pointPatchField, pointMesh>& s, label BC_ind,
+              Eigen::MatrixXd valueVec);
+
 //--------------------------------------------------------------------------
 /// Assign Boundary Condition to a volScalarField
 ///
@@ -209,8 +213,8 @@ void assignBC(GeometricField<vector, fvPatchField, volMesh>& s, label BC_ind,
 void assignBC(GeometricField<scalar, fvsPatchField, surfaceMesh>& field,
               label BC_ind, Eigen::MatrixXd value);
 
-void assignBC(GeometricField<vector, fvsPatchField, surfaceMesh>& field,
-              label BC_ind, Eigen::MatrixXd value);
+// void assignBC(GeometricField<vector, fvsPatchField, surfaceMesh>& field,
+//               label BC_ind, Eigen::MatrixXd value);
 
 //------------------------------------------------------------------------------
 /// @brief      Assign Boundary Condition to a surfaceField

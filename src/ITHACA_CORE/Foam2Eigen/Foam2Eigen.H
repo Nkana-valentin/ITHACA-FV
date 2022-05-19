@@ -39,6 +39,8 @@
 
 #include "fvCFD.H"
 #include "pointMesh.H"
+#include "volMesh.H"
+#include "pointPatchField.H"
 #include "IOmanip.H"
 #include "ITHACAassert.H"
 #include <tuple>

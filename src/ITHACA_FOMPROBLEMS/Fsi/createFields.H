@@ -97,20 +97,58 @@ _phi0 = autoPtr<surfaceScalarField>
         (
             new surfaceScalarField(phi0)
         );
+const pointMesh& pMesh = pointMesh::New(mesh);
+_pd = autoPtr<pointVectorField>
+       (
+           new pointVectorField
+           (
+               IOobject
+                (
+                    "pointDisplacement",
+                    runTime.timeName(),
+                    mesh,
+                    IOobject::NO_READ,
+                    IOobject::AUTO_WRITE
+                ),
+                pMesh
+                //,
+                // dimensionedVector(dimLength, Zero),
+                // pointPatchVectorField::calculatedType()
+           )
+       );
+pointVectorField& pd = _pd();
+
+
+// const pointMesh& pMesh = pointMesh::New(mesh);
+
+//     pointVectorField U
+//     (
+//         IOobject
+//         (
+//             "U",
+//             runTime.timeName(),
+//             mesh,
+//             IOobject::NO_READ,
+//             IOobject::AUTO_WRITE
+//         ),
+//         pMesh,
+//         dimensionedVector(dimLength, Zero),
+//         pointPatchVectorField::calculatedType()
+//     );
 
 label pRefCell = 0;
 scalar pRefValue = 0.0;
 
 setRefCell(p, mesh.solutionDict().subDict("PIMPLE"), pRefCell, pRefValue);
 mesh.setFluxRequired(p.name());
-std::cout << "##############createFields line 107 #################\n"<< std::endl; 
+///std::cout << "##############createFields line 107 #################\n"<< std::endl; 
 _laminarTransport = autoPtr<singlePhaseTransportModel>
                     (
                         new singlePhaseTransportModel( U, phi )
                     );
-std::cout << "##############createFields line 112 #################\n"<< std::endl; 
+//std::cout << "##############createFields line 112 #################\n"<< std::endl; 
 singlePhaseTransportModel& laminarTransport = _laminarTransport();
-std::cout << "##############createFields line 114 #################\n"<< std::endl; 
+//std::cout << "##############createFields line 114 #################\n"<< std::endl; 
 
 turbulence = autoPtr<incompressible::turbulenceModel>
              (
@@ -123,3 +161,27 @@ _MRF = autoPtr<IOMRFZoneList>
        );
 
 _fvOptions = autoPtr<fv::options>(new fv::options(mesh));
+
+
+    dyndict = new IOdictionary
+            (
+                IOobject
+                (
+                    "dynamicMeshDict",
+                    mesh.time().constant(),
+                    mesh,
+                    IOobject::MUST_READ,
+                    IOobject::NO_WRITE,
+                    false
+                )
+            );
+    /// construct a sixDoFRigidBodyMotionSolver object
+    sDRBMS = autoPtr<sixDoFRigidBodyMotionSolver>
+    (
+    new sixDoFRigidBodyMotionSolver(mesh, *dyndict)
+    );
+
+    pimpleControl& pimple = _pimple();
+    correctPhi = pimple.dict().getOrDefault("correctPhi",mesh.dynamic());
+    checkMeshCourantNo = pimple.dict().getOrDefault("checkMeshCourantNo",false);
+    moveMeshOuterCorrectors = pimple.dict().getOrDefault("moveMeshOuterCorrectors",false);

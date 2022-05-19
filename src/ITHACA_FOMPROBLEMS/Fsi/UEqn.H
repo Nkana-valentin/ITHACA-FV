@@ -49,6 +49,7 @@ fvOptions.constrain(UEqn);
 if (pimple.momentumPredictor())
 {
     solve(UEqn == -fvc::grad(p));
-
+    // std::cout << "============" << "the divergence of the velocity is "<< "\n";
+    // Info<< max(mag(fvc::div(U))) << "\n";
     fvOptions.correct(U);
 }

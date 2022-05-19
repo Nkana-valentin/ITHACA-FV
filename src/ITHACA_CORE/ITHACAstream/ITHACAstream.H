@@ -64,7 +64,7 @@ SourceFiles
 #pragma GCC diagnostic ignored "-Wignored-attributes"
 #include <Eigen/Eigen>
 #include "EigenFunctions.H"
-
+#include "pointMesh.H"
 #include <unsupported/Eigen/CXX11/Tensor>
 #pragma GCC diagnostic pop
 

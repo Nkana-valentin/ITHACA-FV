@@ -153,7 +153,21 @@ void assignBC(GeometricField<scalar, fvPatchField, volMesh>& s, label BC_ind,
 
     assignBC(s, BC_ind, valueList);
 }
+/////////////////////////////////////////////////////////////////////////////////////
+void assignBC(GeometricField<vector, pointPatchField, pointMesh>& s, label BC_ind,
+              double value)
+{
+    label sizeBC = s.boundaryField()[BC_ind].size();
+    List<double> valueList(sizeBC);
 
+    for (label i = 0; i < sizeBC; i++)
+    {
+        valueList[i] = value;
+    }
+
+    assignBC(s, BC_ind, value);//valueList
+}
+//////////////////////////////////////////////////////////////////////////////////
 void assignBC(GeometricField<scalar, fvPatchField, volMesh>& s, label BC_ind,
               Eigen::MatrixXd valueVec)
 {
@@ -169,6 +183,7 @@ void assignBC(GeometricField<scalar, fvPatchField, volMesh>& s, label BC_ind,
 
     assignBC(s, BC_ind, valueList);
 }
+
 
 // Assign a BC for a scalar field
 void assignBC(GeometricField<scalar, fvPatchField, volMesh>& s, label BC_ind,
@@ -240,6 +255,78 @@ void assignBC(GeometricField<scalar, fvPatchField, volMesh>& s, label BC_ind,
     }
 }
 
+// Assign a BC for a scalar field
+void assignBC(GeometricField<vector, pointPatchField, pointMesh>& s, label BC_ind,
+              List<double> valueList)
+{
+    word typeBC = s.boundaryField()[BC_ind].type();
+    label sizeBC = s.boundaryField()[BC_ind].size();
+    M_Assert(sizeBC == valueList.size(),
+             "The size of the given values list has to be equal to the dimension of the boundaryField");
+    ITHACAparameters* para(ITHACAparameters::getInstance());
+
+    if (typeBC == "fixedGradient")
+    {
+        fixedGradientFvPatchScalarField& Tpatch =
+            refCast<fixedGradientFvPatchScalarField>(s.boundaryFieldRef()[BC_ind]);
+        scalarField& gradTpatch = Tpatch.gradient();
+        forAll(gradTpatch, faceI)
+        {
+            double value = valueList[faceI];
+            gradTpatch[faceI] = value;
+        }
+    }
+    // else if (typeBC == "freestream")
+    // {
+    //     for (label i = 0; i < sizeBC; i++)
+    //     {
+    //         double value = valueList[i];
+    //         s.boundaryFieldRef()[BC_ind][i] = value;
+    //     }
+
+    //     freestreamFvPatchField<scalar>& Tpatch =
+    //         refCast<freestreamFvPatchField<scalar>>(s.boundaryFieldRef()[BC_ind]);
+    //     scalarField& gradTpatch = Tpatch.freestreamValue();
+    //     forAll(gradTpatch, faceI)
+    //     {
+    //         double value = valueList[faceI];
+    //         gradTpatch[faceI] = value;
+    //     }
+    // }
+    else if (typeBC == "empty" || typeBC == "zeroGradient")
+    {}
+    else
+    {
+        try
+        {
+            if (typeBC != "fixedGradient" && typeBC != "freestream" && typeBC != "empty"
+                    && typeBC != "zeroGradient" && typeBC != "fixedValue" && typeBC != "calculated"
+                    && typeBC != "fixedFluxPressure" && typeBC != "processor"
+                    && typeBC != "nutkWallFunction" && typeBC != "mixedEnergy")
+            {
+                word message = "Pay attention, your typeBC " + typeBC + " for " + s.name() +
+                               " is not included into the developed ones. Your BC will be treated as a classical fixedValue.";
+                throw (message);
+            }
+        }
+        catch (const word message)
+        {
+            if (para->warnings)
+            {
+                WarningInFunction << message << endl;
+            }
+        }
+
+        for (label i = 0; i < sizeBC; i++)
+        {
+            double value = valueList[i];
+            s.primitiveFieldRef()[BC_ind][i] = value;
+        }
+    }
+}
+
+
+
 void assignBC(GeometricField<vector, fvPatchField, volMesh>& s, label BC_ind,
               vector value)
 {
@@ -269,6 +356,24 @@ void assignBC(GeometricField<vector, fvPatchField, volMesh>& s, label BC_ind,
         valueList[i].component(0) = valueVec(i);
         valueList[i].component(1) = valueVec(i + sizeBC);
         valueList[i].component(2) = valueVec(i + sizeBC * 2);
+    }
+
+    assignBC(s, BC_ind, valueList);
+}
+
+void assignBC(GeometricField<vector, pointPatchField, pointMesh>& s, label BC_ind,
+              Eigen::MatrixXd valueVec)
+{
+    label sizeBC = s.boundaryField()[BC_ind].size();
+    M_Assert(sizeBC * 3 == valueVec.size(),
+             "The size of the given values matrix has to be equal to the dimension of the boundaryField");
+    List<double> valueList(sizeBC);
+
+    for (label i = 0; i < sizeBC; i++)
+    {
+        valueList[i] = valueVec(i);
+        //assignBC(s, BC_ind, valueList[i]);
+
     }
 
     assignBC(s, BC_ind, valueList);
@@ -365,6 +470,70 @@ void assignBC(GeometricField<vector, fvPatchField, volMesh>& s, label BC_ind,
         for (label i = 0; i < sizeBC; i++)
         {
             s.boundaryFieldRef()[BC_ind][i] = valueList[i];
+        }
+    }
+}
+
+
+// Assign a BC for a vector field
+void assignBC(GeometricField<vector, pointPatchField, pointMesh>& s, label BC_ind,
+              List<vector> valueList)
+{
+    word typeBC = s.boundaryField()[BC_ind].type();
+    label sizeBC = s.boundaryField()[BC_ind].size();
+    M_Assert(sizeBC == valueList.size(),
+             "The size of the given values list has to be equal to the dimension of the boundaryField");
+    ITHACAparameters* para(ITHACAparameters::getInstance());
+
+    if (s.boundaryField()[BC_ind].type() == "fixedGradient")
+    {
+        Info << "This Feature is not implemented for this boundary condition" << endl;
+        exit(0);
+    }
+    // else if (s.boundaryField()[BC_ind].type() == "freestream")
+    // {
+    //     for (label i = 0; i < s.boundaryField()[BC_ind].size(); i++)
+    //     {
+    //         s.boundaryFieldRef()[BC_ind][i] = valueList[i];
+    //     }
+
+    //     freestreamFvPatchField<vector>& Tpatch =
+    //         refCast<freestreamFvPatchField<vector>>(s.boundaryFieldRef()[BC_ind]);
+    //     vectorField& gradTpatch = Tpatch.freestreamValue();
+    //     forAll(gradTpatch, faceI)
+    //     {
+    //         gradTpatch[faceI] = valueList[faceI];
+    //     }
+    //}
+    else if (s.boundaryField()[BC_ind].type() == "empty"
+             || s.boundaryField()[BC_ind].type() == "zeroGradient")
+    {}
+    else
+    {
+        try
+        {
+            if (typeBC != "fixedGradient" && typeBC != "freestream" && typeBC != "empty"
+                    && typeBC != "zeroGradient" && typeBC != "fixedValue" && typeBC != "calculated"
+                    &&  typeBC != "processor")
+            {
+                word message = "Pay attention, your typeBC " + typeBC + " for " + s.name() +
+                               " is not included into the developed ones. Your BC will be treated as a classical fixedValue.";
+                throw (message);
+            }
+        }
+        catch (const word message)
+        {
+            if (para->warnings)
+            {
+                WarningInFunction << message << endl;
+            }
+        }
+        // GeometricField<vector, pointPatchField, pointMesh> pvf(s[0].name(),
+        //         s[0] * 0);
+        //auto& pvf = Foam2Eigen::Eigen2field(s, valueList, test);
+        for (label i = 0; i < sizeBC; i++)
+        {
+            s.boundaryFieldRef()[BC_ind] = valueList[i];
         }
     }
 }

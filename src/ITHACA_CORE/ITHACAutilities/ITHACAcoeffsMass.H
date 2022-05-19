@@ -47,6 +47,7 @@ SourceFiles
 #include <Eigen/Eigen>
 #pragma GCC diagnostic pop
 #include <functional>
+#include <type_traits>
 #include "./colormod.H"
 #include "polyMeshTools.H"
 #include <chrono>

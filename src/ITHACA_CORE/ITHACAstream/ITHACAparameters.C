@@ -6,6 +6,7 @@ ITHACAparameters::ITHACAparameters(fvMesh& mesh, Time& localTime)
     :
     runTime(localTime),
     mesh(mesh)
+    //pMesh(pointMesh::New(mesh))
 {
     ITHACAdict = new IOdictionary
     (

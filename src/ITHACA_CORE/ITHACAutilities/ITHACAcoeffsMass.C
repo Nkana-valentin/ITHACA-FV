@@ -60,6 +60,11 @@ reconstructFromCoeff(
     PtrList<GeometricField<vector, fvPatchField, volMesh>>& modes,
     Eigen::MatrixXd& coeff_matrix, label Nmodes);
 
+template PtrList<GeometricField<vector, pointPatchField, pointMesh>>
+reconstructFromCoeff(
+    PtrList<GeometricField<vector, pointPatchField, pointMesh>>& modes,
+    Eigen::MatrixXd& coeff_matrix, label Nmodes);
+
 template<class Type, template<class> class PatchField, class GeoMesh>
 Eigen::MatrixXd getMassMatrix(
     PtrList<GeometricField<Type, PatchField, GeoMesh>>& modes, label Nmodes,
@@ -81,9 +86,14 @@ Eigen::MatrixXd getMassMatrix(
     Eigen::MatrixXd F = Foam2Eigen::PtrList2Eigen(modes);
     Eigen::MatrixXd M;
 
-    if (consider_volumes)
+    if(consider_volumes)
     {
         Eigen::VectorXd V = getMassMatrixFV(modes[0]);
+        // std::cout << "cols of F is : " << F.cols() << "rows of F is : " << F.rows() << "\n";
+        // std::cout << "F.leftCols(Msize) is : " << F.leftCols(Msize).size() << "F.transpose().topRows(Msize) is : " << F.transpose().topRows(Msize).size() << "\n";
+
+        // std::cout << "cols of V is : " << V.cols() << "rows of V is : " << V.rows() << "\n";
+        // std::cout << "kdlkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk"<< "\n";
         M = F.transpose().topRows(Msize) * V.asDiagonal() * F.leftCols(Msize);
     }
     else
@@ -112,21 +122,49 @@ template Eigen::MatrixXd getMassMatrix(
     PtrList<GeometricField<vector, fvPatchField, volMesh>>& modes, label Nmodes,
     bool consider_volumes);
 
+
+template Eigen::MatrixXd getMassMatrix(
+    PtrList<GeometricField<vector, pointPatchField, pointMesh>>& modes, label Nmodes,
+    bool consider_volumes);
+// template Eigen::MatrixXd getMassMatrix(
+//     PtrList<GeometricField<scalar, pointPatchField, pointMesh>>& modes, label Nmodes,
+//     bool consider_volumes=false);
+
 template<class Type, template<class> class PatchField, class GeoMesh>
 Eigen::VectorXd getMassMatrixFV(
     GeometricField<Type, PatchField, GeoMesh>& snapshot)
 {
-    Eigen::MatrixXd snapEigen = Foam2Eigen::field2Eigen(snapshot);
-    label dim = std::nearbyint(snapEigen.rows() / (snapshot.mesh().V()).size());
-    Eigen::VectorXd volumes = Foam2Eigen::field2Eigen(snapshot.mesh().V());
-    Eigen::VectorXd vol3 = volumes.replicate(dim, 1);
-    return vol3;
+    constexpr bool check_vol = std::is_same<volMesh, GeoMesh>::value || std::is_same<surfaceMesh, GeoMesh>::value;
+    //bool test = std::is_same<volMesh, decltype(snapshot)>::value;
+
+    if constexpr(check_vol){ 
+
+        Eigen::MatrixXd snapEigen = Foam2Eigen::field2Eigen(snapshot);
+        label dim = std::nearbyint(snapEigen.rows() / (snapshot.mesh().V()).size());
+        Eigen::VectorXd volumes = Foam2Eigen::field2Eigen(snapshot.mesh().V());
+        Eigen::VectorXd vol3 = volumes.replicate(dim, 1);
+        return vol3;
+     }
+    else if constexpr(std::is_same<pointMesh, GeoMesh>::value) {
+
+        Eigen::MatrixXd snapEigen = Foam2Eigen::field2Eigen(snapshot);
+        label dim = std::nearbyint(snapEigen.rows() / (snapshot.size()));
+        Eigen::VectorXd pointsdata = Foam2Eigen::field2Eigen(snapshot);
+        Eigen::VectorXd points3 = pointsdata.replicate(dim, 1);
+        return points3;
+    } 
+    // else{
+    //     return{};
+    //    M_Assert(false, "not a valid type");
+    // }       
 }
 
 template Eigen::VectorXd getMassMatrixFV(
     GeometricField<scalar, fvPatchField, volMesh>& snapshot);
 template Eigen::VectorXd getMassMatrixFV(
     GeometricField<vector, fvPatchField, volMesh>& snapshot);
+template Eigen::VectorXd getMassMatrixFV(
+    GeometricField<vector, pointPatchField, pointMesh>& snapshot);
 
 template<class Type, template<class> class PatchField, class GeoMesh>
 Eigen::VectorXd getCoeffs(GeometricField<Type, PatchField, GeoMesh>&
@@ -190,6 +228,12 @@ template Eigen::VectorXd getCoeffs(
     label Nmodes,
     bool consider_volumes);
 
+template Eigen::VectorXd getCoeffs(
+    GeometricField<vector, pointPatchField, pointMesh>&
+    snapshot, PtrList<GeometricField<vector, pointPatchField, pointMesh>>& modes,
+    label Nmodes,
+    bool consider_volumes);
+
 template<class Type, template<class> class PatchField, class GeoMesh>
 Eigen::MatrixXd getCoeffs(PtrList<GeometricField<Type, PatchField, GeoMesh>>&
                           snapshots,
@@ -234,6 +278,11 @@ template Eigen::MatrixXd getCoeffs(
 template Eigen::MatrixXd getCoeffs(
     PtrList<GeometricField<scalar, fvsPatchField, surfaceMesh>>&
     snapshot, PtrList<GeometricField<scalar, fvsPatchField, surfaceMesh>>& modes,
+    label Nmodes,
+    bool consider_volumes);
+template Eigen::MatrixXd getCoeffs(
+    PtrList<GeometricField<vector, pointPatchField, pointMesh>>&
+    snapshot, PtrList<GeometricField<vector, pointPatchField, pointMesh>>& modes,
     label Nmodes,
     bool consider_volumes);
 

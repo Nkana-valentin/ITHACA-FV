@@ -33,6 +33,7 @@ SourceFiles
 
 #include <iostream>
 #include "fvCFD.H"
+#include "pointMesh.H"
 #include "ITHACAassert.H"
 
 /// Class for the definition of some general parameters, the parameters must be defined from the file ITHACAdict inside the
@@ -68,6 +69,10 @@ class ITHACAparameters
         /// Mesh object defined locally
         fvMesh& mesh;
 
+        /// pMesh object defined locally
+        //pointMesh& pMesh;
+        //= pointMesh::New(mesh);
+
         /// Pointer to the ITHACAparameters class
         static ITHACAparameters* instance;
 
@@ -81,6 +86,8 @@ class ITHACAparameters
         /// @return     The instance.
         ///
         static ITHACAparameters* getInstance(fvMesh& mesh, Time& localTime);
+
+        //static ITHACAparameters* getInstance(pointMesh& pMesh Time& localTime);
 
         ///
         /// @brief      Gets an instance of ITHACAparameters, to be used if the instance is already existing.
