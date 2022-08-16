@@ -67,7 +67,7 @@ SourceFiles
 /// Implementation of a parametrized full order <b> unsteady NS problem </b> and preparation of the the reduced matrices for the online solve.
 /** In this class are implemented the methods for the offline solve of a unsteady NS problem
 and the for the generation of the reduced matrices for subsequent online solve, this class is a son
-of the steadyNS class */
+of the fsiBasic class */
 class fsiBasic: public unsteadyNS
 {
     public:
@@ -103,7 +103,7 @@ class fsiBasic: public unsteadyNS
         /// List of POD modes for pointDisplacement
         pointVectorModes Dmodes;
         /// pointDisplacement field
-        autoPtr<pointVectorField> _pd;
+        autoPtr<pointVectorField> _pointDisplacement;
         /// List to save lift and drag forces
         List<scalar> fomforcey;
         List<scalar> fomforcex;
@@ -120,8 +120,8 @@ class fsiBasic: public unsteadyNS
 
         /// Create a RBF splines for interpolation
         std::vector<SPLINTER::RBFSpline*> rbfSplines;
-        /// Row matrix of parameters
-        //Eigen::MatrixXd mu;
+        /// GridPointsd
+        PtrList<pointField> GridPoints;
 
         bool  correctPhi;
         bool  checkMeshCourantNo;
@@ -129,8 +129,10 @@ class fsiBasic: public unsteadyNS
 
         IOdictionary* dyndict;
 
-        // Functions
+        /// List of 6-Dof motion
+        //PtrList<sixDoFRigidBodyMotionSolver> sixDofList;
 
+        // Functions
         //--------------------------------------------------------------------------
         /// @brief      Perform a truthsolve
         /// @param[in]  mu_now  The actual value of the parameter for this truthSolve. Used only

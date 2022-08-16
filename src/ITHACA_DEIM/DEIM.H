@@ -34,6 +34,7 @@ SourceFiles
 #include "EigenFunctions.H"
 #include "ITHACAutilities.H"
 #include "fvMeshSubset.H"
+#include "ITHACAparameters.H"
 
 
 template<typename T>
@@ -117,14 +118,14 @@ class DEIM
         Eigen::MatrixXd UB;
         ///@}
 
-        /// Magic points in the case of the a nonlinear function
-        autoPtr<IOList<label>> magicPoints;
         /// Magic points in the case of the a matrix function (rows indices)
         autoPtr<IOList<label>> magicPointsArow;
         /// Magic points in the case of the a matrix function (cols indices)
         autoPtr<IOList<label>> magicPointsAcol;
         /// Magic points in the case of the a matrix function, right hand side
         autoPtr<IOList<label>> magicPointsB;
+         /// Magic points in the case of the a nonlinear function
+        autoPtr<IOList<label>> magicPoints;
 
         /// Magic points and indices of the surrounding layers
         ///@{

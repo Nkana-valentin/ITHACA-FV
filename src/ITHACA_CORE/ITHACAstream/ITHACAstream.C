@@ -904,6 +904,10 @@ template void exportSolution(
     fileName subfolder, fileName folder);
 
 template void exportSolution(
+    GeometricField<vector, fvsPatchField, surfaceMesh>& s,
+    fileName subfolder, fileName folder);
+
+template void exportSolution(
     GeometricField<scalar, pointPatchField, pointMesh>& s,
     fileName subfolder, fileName folder);
 template void exportSolution(

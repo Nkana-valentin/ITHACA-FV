@@ -1376,7 +1376,8 @@ PtrList<GeometricField<Type, PatchField, GeoMesh>>DEIMmodes(
              PODnorm == "Frobenius", "The PODnorm can be only L2 or Frobenius");
     Info << "Performing POD for " << fieldName << " using the " << PODnorm <<
          " norm" << endl;
-    PtrList<GeometricField<Type, fvPatchField, volMesh>> modes;
+    //PtrList<GeometricField<Type, fvPatchField, volMesh>> modes;
+    PtrList<GeometricField<Type, PatchField, GeoMesh>> modes; ///???????
     bool correctBC = true;
 
     if (nmodes == 0 && para->eigensolver == "spectra")
@@ -1541,13 +1542,13 @@ PtrList<GeometricField<Type, PatchField, GeoMesh>>DEIMmodes(
         Info << "####### Saving the POD bases for " << snapshots[0].name() <<
              " #######" << endl;
         ITHACAutilities::createSymLink("./ITHACAoutput/DEIM");
-
+         //std::cerr << "ddddddddddddddddddddddddddddddddddddddddddddddd" << std::endl;
         for (label i = 0; i < modes.size(); i++)
         {
             ITHACAstream::exportSolution(modes[i], name(i + 1), "./ITHACAoutput/DEIM",
                                          fieldName);
         }
-
+ //std::cerr << "ddddddddddddddddddddddddddddddddddddddddddddddd" << std::endl;
         Eigen::saveMarketVector(eigenValueseig,
                                 "./ITHACAoutput/DEIM/eigenValues_" + fieldName, para->precision,
                                 para->outytpe);
@@ -1560,7 +1561,7 @@ PtrList<GeometricField<Type, PatchField, GeoMesh>>DEIMmodes(
         Info << "Reading the existing modes" << endl;
         ITHACAstream::read_fields(modes, fieldName, "./ITHACAoutput/DEIM/");
     }
-
+     //std::cerr << "ddddddddddddddddddddddddddddddddddddddddddddddd" << std::endl;
     return modes;
 }
 
@@ -1724,5 +1725,17 @@ DEIMmodes(
     PtrList<volVectorField>& SnapShotsMatrix,
     label nmodes,
     word FunctionName, word FieldName);
+
+template PtrList<surfaceScalarField>
+DEIMmodes(
+    PtrList<surfaceScalarField>& SnapShotsMatrix,
+    label nmodes,
+    word FunctionName, word FieldName);
+
+// template PtrList<surfaceVectorField>
+// DEIMmodes(
+//     PtrList<surfaceVectorField>& SnapShotsMatrix,
+//     label nmodes,
+//     word FunctionName, word FieldName);
 
 }

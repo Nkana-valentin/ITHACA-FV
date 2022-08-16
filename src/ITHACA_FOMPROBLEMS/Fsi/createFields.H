@@ -93,12 +93,32 @@ _phi = autoPtr<surfaceScalarField>
 surfaceScalarField& phi = _phi();
 surfaceScalarField phi0(phi);
 
+_Uf = autoPtr<surfaceVectorField>
+       (
+           new surfaceVectorField
+           (
+               IOobject
+               (
+                   "Uf",
+                   runTime.timeName(),
+                   mesh,
+                   IOobject::READ_IF_PRESENT,
+                   IOobject::AUTO_WRITE
+               ),
+               fvc::interpolate(U)
+           )
+       );
+       
+surfaceVectorField& Uf = _Uf();
+surfaceVectorField Uf0(Uf);
+
+
 _phi0 = autoPtr<surfaceScalarField>
         (
             new surfaceScalarField(phi0)
         );
 const pointMesh& pMesh = pointMesh::New(mesh);
-_pd = autoPtr<pointVectorField>
+_pointDisplacement = autoPtr<pointVectorField>
        (
            new pointVectorField
            (
@@ -110,13 +130,12 @@ _pd = autoPtr<pointVectorField>
                     IOobject::NO_READ,
                     IOobject::AUTO_WRITE
                 ),
-                pMesh
-                //,
-                // dimensionedVector(dimLength, Zero),
-                // pointPatchVectorField::calculatedType()
+                pMesh,
+                dimensionedVector(dimLength, Zero),
+                pointPatchVectorField::calculatedType()
            )
        );
-pointVectorField& pd = _pd();
+pointVectorField& pointDisplacement = _pointDisplacement();
 
 
 // const pointMesh& pMesh = pointMesh::New(mesh);

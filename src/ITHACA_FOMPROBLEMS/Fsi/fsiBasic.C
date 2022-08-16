@@ -95,8 +95,8 @@ void fsiBasic::truthSolve(List<scalar> mu_now, fileName folder)
     singlePhaseTransportModel& laminarTransport = _laminarTransport();
     instantList Times = runTime.times();
     runTime.setEndTime(finalTime);
-    label BCind = 5;
-    auto dd = sDRBMS().pointDisplacement().boundaryFieldRef()[BCind].patchInternalField()();// 
+    //label BCind = 5;
+    //auto dd = sDRBMS().pointDisplacement().boundaryFieldRef()[BCind].patchInternalField()();// 
     // sDRBMS().pointDisplacement().boundaryFieldRef()[BCind].patchInternalField() 
     // //return a tmp<foam::field><Foam::vector<double>>; with ()() return a Foam::Field<vector<double>>
     // std::cout << "/////////////////////////////////////////////////////////////" << "\n";
@@ -118,19 +118,19 @@ void fsiBasic::truthSolve(List<scalar> mu_now, fileName folder)
     turbulence->validate();
 #include "createUfIfPresent.H"
     // // Export and store the initial conditions for velocity and pressure
-    ITHACAstream::exportSolution(U, name(counter), folder);
-    ITHACAstream::exportSolution(p, name(counter), folder);
-    ITHACAstream::exportSolution(sDRBMS().pointDisplacement(), name(counter), folder);
-    ITHACAstream::writePoints(meshPtr().points(), folder, name(counter) + "/polyMesh/");
+    // ITHACAstream::exportSolution(U, name(counter), folder);
+    // ITHACAstream::exportSolution(p, name(counter), folder);
+    // ITHACAstream::exportSolution(sDRBMS().pointDisplacement(), name(counter), folder);
+    // ITHACAstream::writePoints(meshPtr().points(), folder, name(counter) + "/polyMesh/");
 
-    std::ofstream of(folder + name(counter) + "/" + runTime.timeName());
-    Ufield.append(U.clone());
-    Pfield.append(p.clone());
-    //Dfield.append(sDRBMS().pointDisplacement().clone()); // don't save the first snap of pdisp
-    // initial condition for pointDisplacement because it is 0 and rbf will complain during 
-    // interpolation.
-    counter++;
-    nextWrite += writeEvery;
+    // std::ofstream of(folder + name(counter) + "/" + runTime.timeName());
+    // Ufield.append(U.clone());
+    // Pfield.append(p.clone());
+    // //Dfield.append(sDRBMS().pointDisplacement().clone()); // don't save the first snap of pdisp
+    // // initial condition for pointDisplacement because it is 0 and rbf will complain during 
+    // // interpolation.
+    // counter++;
+    // nextWrite += writeEvery;
 
     Info<< "\nStarting time loop\n" << endl;
 
@@ -140,8 +140,6 @@ void fsiBasic::truthSolve(List<scalar> mu_now, fileName folder)
 
         runTime.setEndTime(finalTime);
         runTime++;
-
-        //++runTime;
 
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
@@ -158,15 +156,9 @@ void fsiBasic::truthSolve(List<scalar> mu_now, fileName folder)
                 //mesh.controlledUpdate();
                 // The following line remplace the above controlledUpdate() method
                 sDRBMS().solve();
-                // dd = sDRBMS().pointDisplacement().boundaryFieldRef()[BCind].patchInternalField();
-                // std::cout << "/////////////////////////////////////////////////////////////" << "\n";
-                // //Info << dd << "\n"; 
-                // auto ddtoeigen = Foam2Eigen::field2Eigen(dd);
-                // std::cout << ddtoeigen << "\n";
+
                 mesh.movePoints(sDRBMS().curPoints());
                 // std::cerr << "################"<< "Before six dof motion solver" << "#############"<< std::endl;
-                
-
                 if (mesh.changing())
                 {
                     MRF.update();
@@ -226,6 +218,8 @@ void fsiBasic::truthSolve(List<scalar> mu_now, fileName folder)
             Ufield.append(U.clone());
             Pfield.append(p.clone());
             Dfield.append(sDRBMS().pointDisplacement().clone());
+            GridPoints.append(meshPtr().points().clone());
+            //sixDofList.append(sDRBMS()() );
             counter++;
             nextWrite += writeEvery;
 
@@ -270,12 +264,13 @@ void fsiBasic::liftSolve()
         fv::options& fvOptions = _fvOptions();
         pimpleControl& pimple = _pimple();
         IOMRFZoneList& MRF = _MRF();
-
+        //surfaceVectorField& Uf = _Uf();
+#include"createUfIfPresent.H"
         label BCind = inletIndex(k, 0);
         volVectorField Ulift("Ulift" + name(k), U);
         instantList Times = runTime.times();
         runTime.setTime(Times[1], 1);
-        pisoControl piso(mesh);
+        //pisoControl piso(mesh);
         Vector<double> v1(0, 0, 0);
         v1[inletIndex(k, 1)] = 1;
         Vector<double> v0(0, 0, 0);
@@ -331,14 +326,14 @@ void fsiBasic::liftSolve()
         volVectorField HbyA(constrainHbyA(rAU*UEqn.H(), U, p));
         surfaceScalarField phiHbyA("phiHbyA", fvc::flux(HbyA));
 
-        // if (pimple.ddtCorr())
-        // {
-        //     phiHbyA += MRF.zeroFilter(fvc::interpolate(rAU)*fvc::ddtCorr(U, phi, Uf));
-        // }
-        // else
-        // {
-        //     phiHbyA += MRF.zeroFilter(fvc::interpolate(rAU));
-        // }
+        if (pimple.ddtCorr())
+        {
+            phiHbyA += MRF.zeroFilter(fvc::interpolate(rAU)*fvc::ddtCorr(U, phi, Uf));
+        }
+        else
+        {
+            phiHbyA += MRF.zeroFilter(fvc::interpolate(rAU));
+        }
 
         // MRF.makeRelative(phiHbyA);
 
@@ -412,7 +407,7 @@ void fsiBasic::restart()
     _U.clear();
     _phi.clear();
     _Uf.clear();
-    _pd.clear();
+    _pointDisplacement.clear();
     sDRBMS.clear();
     argList& args = _args();
     Time& runTime = _runTime();

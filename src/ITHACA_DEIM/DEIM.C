@@ -80,7 +80,12 @@ DEIM<T>::DEIM (PtrList<T>& s, label MaxModes, word FunctionName, word FieldName)
         Eigen::VectorXd r;
         Eigen::VectorXd rho(1);
         MatrixModes = Foam2Eigen::PtrList2Eigen(modes);
-        label ind_max, c1, xyz_in;
+        int ind_max = 0;
+        int  c1 = 0; 
+        int  xyz_in = 0;
+
+        Ncells = modes[0].size();
+        //label ind_max, c1, xyz_in;
         double max = MatrixModes.cwiseAbs().col(0).maxCoeff(&ind_max, &c1);
         check3DIndices(ind_max, xyz_in);
         rho(0) = max;
@@ -89,7 +94,6 @@ DEIM<T>::DEIM (PtrList<T>& s, label MaxModes, word FunctionName, word FieldName)
         U = MatrixModes.col(0);
         P.resize(MatrixModes.rows(), 1);
         P.insert(ind_max, 0) = 1;
-
         for (label i = 1; i < MaxModes; i++)
         {
             A = P.transpose() * U;
@@ -103,8 +107,8 @@ DEIM<T>::DEIM (PtrList<T>& s, label MaxModes, word FunctionName, word FieldName)
             U.col(i) =  MatrixModes.col(i);
             rho.conservativeResize(i + 1);
             rho(i) = max;
-            magicPoints().append(ind_max);
             check3DIndices(ind_max, xyz_in);
+            magicPoints().append(ind_max);
             xyz().append(xyz_in);
         }
 
@@ -160,7 +164,7 @@ DEIM<T>::DEIM (PtrList<T>& s, label MaxModesA, label MaxModesB, word MatrixName)
                                   para->runTime.time().constant(),
                                   "../" + FolderM,
                                   para->mesh,
-                                  IOobject::READ_IF_PRESENT,
+                                  IOobject::READ_IF_PRESENT,// NO_READ????
                                   IOobject::NO_WRITE
                               )
                           )
@@ -225,6 +229,7 @@ DEIM<T>::DEIM (PtrList<T>& s, label MaxModesA, label MaxModesB, word MatrixName)
                     )
                 )
             );
+
 
     if (!(magicPointsArow().headerOk() && magicPointsAcol().headerOk() &&
             magicPointsB().headerOk() && xyz_Arow().headerOk() &&
@@ -680,7 +685,7 @@ void DEIM<T>::check3DIndices(label& ind_rowA, label&  ind_colA, label& xyz_rowA,
     else if (ind_colA < Ncells * 2)
     {
         xyz_colA = 1;
-        ind_colA = ind_colA - 2 * Ncells;
+        ind_colA = ind_colA - Ncells;
     }
     else
     {
@@ -817,10 +822,15 @@ template DEIM<volScalarField>::DEIM(PtrList<volScalarField>& s, label MaxModes,
                                     word FunctionName, word FieldName);
 template DEIM<volVectorField>::DEIM(PtrList<volVectorField>& s, label MaxModes,
                                     word FunctionName, word FieldName);
+template DEIM<surfaceScalarField>::DEIM(PtrList<surfaceScalarField>& s, label MaxModes,
+                                    word FunctionName, word FieldName);
+// template DEIM<surfaceVectorField>::DEIM(PtrList<surfaceVectorField>& s, label MaxModes,
+//                                     word FunctionName, word FieldName);
 
 // Specialization for generateSubFieldMatrix
 template volScalarField DEIM<fvScalarMatrix>::generateSubFieldMatrix(
     volScalarField& field);
+
 template volVectorField DEIM<fvScalarMatrix>::generateSubFieldMatrix(
     volVectorField& field);
 template surfaceScalarField
@@ -867,6 +877,9 @@ template volScalarField DEIM<volVectorField>::generateSubmesh(
 template volVectorField DEIM<volScalarField>::generateSubmesh(
     label layers, fvMesh& mesh, volVectorField field,
     label secondTime);
+// template surfaceVectorField DEIM<surfaceVectorField>::generateSubmesh(
+//     label layers, fvMesh& mesh, surfaceVectorField field,
+//     label secondTime);
 
 // Specialization for generateSubmeshVector
 template volScalarField DEIM<fvScalarMatrix>::generateSubmeshVector(

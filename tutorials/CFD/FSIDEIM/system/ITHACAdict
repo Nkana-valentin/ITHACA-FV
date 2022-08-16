@@ -19,12 +19,12 @@ EigenSolver eigen;
 //EigenSolver spectra;
 
 // Number of modes to output and to use for projection
-NmodesUout 50;
+//NmodesUout 50;
 NmodesUproj 10;
-NmodePUout 50;
+//NmodePUout 50;
 NmodesPproj 10;
-NmodesDout 1;
-NmodesDproj 1;
+//NmodesDout 1;
+//NmodesDproj 1;
 
 // Output format to save market vectors.
 OutPrecision 20;
@@ -33,23 +33,16 @@ OutType fixed;
 bcMethod penalty;
 warning false;
 
-debug 1;
-
-// // Specific problem of a stationary case
-//tolerance 1e-5;
-
-// // Reduced simple cicle parameters
-residualJumpLim 1e-5;
-normalizedResidualLim 1e-5;
+//debug 1;
 
 // // Inlet boundary conditions velocities.
  online_velocities vel.txt;
 POD_pointDisplacement   Frobenius;
 POD_phi   Frobenius;
-// // Do not export middle fields for this case
-// middleExport false;
 
-N_modes_U 4;
-
-N_modes_DEIM_A 4;
-N_modes_DEIM_B 4;
+NmodesU  10;
+NmodesP  10;
+NmodesDEIMAU  5; 
+NmodesDEIMbU  1;
+NmodesDEIMAP  5;
+NmodesDEIMbP  1;
