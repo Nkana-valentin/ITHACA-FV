@@ -94,6 +94,7 @@ DEIM<T>::DEIM (PtrList<T>& s, label MaxModes, word FunctionName, word FieldName)
         U = MatrixModes.col(0);
         P.resize(MatrixModes.rows(), 1);
         P.insert(ind_max, 0) = 1;
+
         for (label i = 1; i < MaxModes; i++)
         {
             A = P.transpose() * U;
@@ -169,6 +170,7 @@ DEIM<T>::DEIM (PtrList<T>& s, label MaxModesA, label MaxModesB, word MatrixName)
                               )
                           )
                       );
+
     magicPointsB = autoPtr<IOList<label>>
                    (
                        new IOList<label>
@@ -184,6 +186,7 @@ DEIM<T>::DEIM (PtrList<T>& s, label MaxModesA, label MaxModesB, word MatrixName)
                            )
                        )
                    );
+
     xyz_Arow = autoPtr<IOList<label>>
                (
                    new IOList<label>
@@ -214,6 +217,7 @@ DEIM<T>::DEIM (PtrList<T>& s, label MaxModesA, label MaxModesB, word MatrixName)
                        )
                    )
                );
+
     xyz_B = autoPtr<IOList<label>>
             (
                 new IOList<label>
@@ -229,7 +233,6 @@ DEIM<T>::DEIM (PtrList<T>& s, label MaxModesA, label MaxModesB, word MatrixName)
                     )
                 )
             );
-
 
     if (!(magicPointsArow().headerOk() && magicPointsAcol().headerOk() &&
             magicPointsB().headerOk() && xyz_Arow().headerOk() &&
