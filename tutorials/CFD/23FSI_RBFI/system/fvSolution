@@ -75,7 +75,7 @@ solvers
 
 SIMPLE
 {
-    nNonOrthogonalCorrectors 2;
+    nNonOrthogonalCorrectors 1;
     pRefCell 0;
     pRefValue 0;
 }
@@ -83,7 +83,7 @@ SIMPLE
 PIMPLE
 {
     nNonOrthogonalCorrectors 1;
-    nCorrectors 1; //1
+    nCorrectors 1;//3
     //nCorrPISO   1;
     //consistent yes;
     //momentumPredictor yes;

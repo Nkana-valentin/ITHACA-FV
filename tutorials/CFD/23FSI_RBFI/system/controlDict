@@ -50,7 +50,7 @@ runTimeModifiable false;// false
 
 adjustTimeStep off; 
 
-maxCo 1; //1
+maxCo 0.9; //1
 
 
 /*functions

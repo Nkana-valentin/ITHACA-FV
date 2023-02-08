@@ -1572,6 +1572,7 @@ PtrList<GeometricField<Type, PatchField, GeoMesh>>DEIMmodes(
             ITHACAstream::exportSolution(modes[i], name(i + 1), "./ITHACAoutput/DEIM",
                                          fieldName);
         }
+
         Eigen::saveMarketVector(eigenValueseig,
                                 "./ITHACAoutput/DEIM/eigenValues_" + fieldName, para->precision,
                                 para->outytpe);
@@ -1584,7 +1585,6 @@ PtrList<GeometricField<Type, PatchField, GeoMesh>>DEIMmodes(
         Info << "Reading the existing modes" << endl;
         ITHACAstream::read_fields(modes, fieldName, "./ITHACAoutput/DEIM/");
     }
-     //std::cerr << "ddddddddddddddddddddddddddddddddddddddddddddddd" << std::endl;
     return modes;
 }
 
@@ -1748,6 +1748,7 @@ DEIMmodes(
     PtrList<volVectorField>& SnapShotsMatrix,
     label nmodes,
     word FunctionName, word FieldName);
+
 
 template PtrList<surfaceScalarField>
 DEIMmodes(

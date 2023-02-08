@@ -54,7 +54,10 @@ SourceFiles
 #include "IOstreams.H"
 #include "objectRegistry.H"
 #include "localEulerDdtScheme.H"
-#include "reductionProblem.H"
+#include "pointPatchDist.H"
+//#include "pointConstraints.H"
+#include "pointMesh.H"
+#include "pointFields.H"
 #include <iostream>
 
 
@@ -79,13 +82,21 @@ class fsiBasic: public unsteadyNS
         fsiBasic(int argc, char* argv[]);
         ~fsiBasic() {};
 
+
+        autoPtr<volVectorField> _U;
         autoPtr<volScalarField> _p;
+       
+        /// pointDisplacement field
+        autoPtr<pointVectorField> _pointDisplacement;
+        //- Current interpolation scale (1 at patches, 0 at distance_)
+        autoPtr<pointScalarField> _scale;
         // /// Dynamic mesh field
         autoPtr<Foam::dynamicFvMesh> meshPtr;
         /// pimpleControl
         autoPtr<pimpleControl> _pimple;
         autoPtr<sixDoFRigidBodyMotionSolver> sDRBMS;
         vectorField point0;
+        /// Constructing face velocity Uf
         autoPtr<surfaceVectorField> _Uf;
         /// List of pointers used pointDisplacement modes
         PtrList<pointVectorField> DFields;
@@ -104,7 +115,6 @@ class fsiBasic: public unsteadyNS
         /// List of POD modes for pointDisplacement
         pointVectorModes Dmodes;
         /// pointDisplacement field
-        autoPtr<pointVectorField> _pointDisplacement;
         /// List to save lift and drag forces
         List<scalar> fomforcey;
         List<scalar> fomforcex;
@@ -122,10 +132,32 @@ class fsiBasic: public unsteadyNS
         /// Create a RBF splines for interpolation
         std::vector<SPLINTER::RBFSpline*> rbfSplines;
 
+        /// GridPointsd
+        //PtrList<pointField> GridPoints;
+        /// List of grid motion
+        //PtrList<pointVectorField> GridPoints;
+        //PtrList<pointField> GridPoints;
+                 /// List of snapshots for the solution for eddy viscosity
+        PtrList<volScalarField> nutFields;
+
+        /// List of POD modes for eddy viscosity
+        volScalarModes nutModes;
         bool  correctPhi;
         bool  checkMeshCourantNo;
         bool  moveMeshOuterCorrectors;
         IOdictionary* dyndict;
+        //- Patches to integrate forces
+        labelHashSet patchSet_;
+ 
+        //- Inner morphing distance (limit of solid-body region)
+        scalar di_;
+ 
+        //- Outer morphing distance (limit of linear interpolation region)
+        scalar do_;
+        wordRes patches_;
+
+        /// List of 6-Dof motion
+        //PtrList<sixDoFRigidBodyMotionSolver> sixDofList;
 
         // Functions
         //--------------------------------------------------------------------------

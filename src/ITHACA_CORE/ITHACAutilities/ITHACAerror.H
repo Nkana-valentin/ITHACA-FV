@@ -87,6 +87,10 @@ template<typename T>
 double errorL2Rel(GeometricField<T, fvPatchField, volMesh>& field1,
                   GeometricField<T, fvPatchField, volMesh>& field2, List<label>* labels = NULL);
 
+template<typename T>
+double errorL2Rel(GeometricField<T, pointPatchField, pointMesh>& field1,
+                  GeometricField<T, pointPatchField, pointMesh>& field2, List<label>* labels = NULL);
+
 //--------------------------------------------------------------------------
 /// @brief      Computes the relative error between two geometric Fields in Linf norm
 ///
@@ -118,6 +122,10 @@ template<typename T>
 double errorL2Abs(GeometricField<T, fvPatchField, volMesh>& field1,
                   GeometricField<T, fvPatchField, volMesh>& field2, volScalarField& Volumes);
 
+template<typename T>
+double errorL2Abs(GeometricField<T, pointPatchField, pointMesh>& field1,
+                  GeometricField<T, pointPatchField, pointMesh>& field2, pointVectorField& Volumes);
+
 //--------------------------------------------------------------------------
 /// @brief      Computes the absolute error between two Fields in L2 norm
 ///
@@ -132,6 +140,10 @@ double errorL2Abs(GeometricField<T, fvPatchField, volMesh>& field1,
 template<typename T>
 double errorL2Abs(GeometricField<T, fvPatchField, volMesh>& field1,
                   GeometricField<T, fvPatchField, volMesh>& field2, List<label>* labels = NULL);
+
+template<typename T>
+double errorL2Abs(GeometricField<T, pointPatchField, pointMesh>& field1,
+                  GeometricField<T, pointPatchField, pointMesh>& field2, List<label>* labels = NULL);
 
 //--------------------------------------------------------------------------
 /// @brief      Computes the relative error in L2 norm between two lists of fields
@@ -150,6 +162,14 @@ Eigen::MatrixXd errorL2Rel(PtrList<GeometricField<T, fvPatchField, volMesh>>&
                            PtrList<GeometricField<T, fvPatchField, volMesh>>& fields2,
                            List<label>* labels = NULL);
 
+
+
+template<typename T>
+Eigen::MatrixXd errorL2Rel(PtrList<GeometricField<T, pointPatchField, pointMesh>>&
+                           fields1,
+                           PtrList<GeometricField<T, pointPatchField, pointMesh>>& fields2,
+                           List<label>* labels = NULL);
+
 //--------------------------------------------------------------------------
 /// @brief      Computes the relative error in the Frobenius norm between two lists of fields
 ///
@@ -165,6 +185,12 @@ template<typename T>
 Eigen::MatrixXd errorFrobRel(PtrList<GeometricField<T, fvPatchField, volMesh>>&
                              fields1,
                              PtrList<GeometricField<T, fvPatchField, volMesh>>& fields2,
+                             List<label>* labels = NULL);
+
+template<typename T>
+Eigen::MatrixXd errorFrobRel(PtrList<GeometricField<T, pointPatchField, pointMesh>>&
+                             fields1,
+                             PtrList<GeometricField<T, pointPatchField, pointMesh>>& fields2,
                              List<label>* labels = NULL);
 
 //--------------------------------------------------------------------------
@@ -185,6 +211,14 @@ Eigen::MatrixXd errorL2Abs(
     PtrList<GeometricField<T, fvPatchField, volMesh>>& fields2,
     PtrList<volScalarField>& Volumes);
 
+
+
+template<typename T>
+Eigen::MatrixXd errorL2Abs(
+    PtrList<GeometricField<T, pointPatchField, pointMesh>>& fields1,
+    PtrList<GeometricField<T, pointPatchField, pointMesh>>& fields2,
+    PtrList<pointVectorField>& Volumes);
+
 //--------------------------------------------------------------------------
 /// @brief      Computes the absolute error in L2 norm between two lists of Fields
 ///
@@ -200,6 +234,13 @@ template<typename T>
 Eigen::MatrixXd errorL2Abs(PtrList<GeometricField<T, fvPatchField, volMesh>>&
                            fields1,
                            PtrList<GeometricField<T, fvPatchField, volMesh>>& fields2,
+                           List<label>* labels = NULL);
+
+
+template<typename T>
+Eigen::MatrixXd errorL2Abs(PtrList<GeometricField<T, pointPatchField, pointMesh>>&
+                           fields1,
+                           PtrList<GeometricField<T, pointPatchField, pointMesh>>& fields2,
                            List<label>* labels = NULL);
 
 //------------------------------------------------------------------------------

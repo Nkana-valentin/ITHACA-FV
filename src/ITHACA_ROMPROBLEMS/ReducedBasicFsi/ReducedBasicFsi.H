@@ -39,79 +39,126 @@ SourceFiles
 
 #include "fvCFD.H"
 #include "IOmanip.H"
-#include "ReducedProblem.H"
+//#include "ReducedProblem.H"
 #include "fsiBasic.H"
 #include "ITHACAutilities.H"
 #include "ReducedSimpleSteadyNS.H"
 #include "EigenFunctions.H"
+#include "pointConstraints.H"
 #include <Eigen/Eigen>
 #include <unsupported/Eigen/NonLinearOptimization>
 #include <unsupported/Eigen/NumericalDiff>
 #include "Modes.H"
 
 
+//#include "fsiBasic.H"
+#include "ITHACAPOD.H"
+//#include "ReducedSimpleSteadyNS.H"
+#include "ITHACAstream.H"
+#include "dynamicFvMesh.H"
+#include "ReducedProblem.H"
+#include <chrono>
+//#include<math.h>
+//#include<iomanip>
+//#include "pointConstraints.H"
+//#include "mathematicalConstants.H"
+
+//class fsiBasic;
 class ReducedBasicFsi : public reducedSimpleSteadyNS
 {
     public:
         /// Constructor
-        ReducedBasicFsi() {}
-        explicit ReducedBasicFsi(fsiBasic& FOMproblem);
-        ~ReducedBasicFsi() {}
+        ReducedBasicFsi();
+        explicit ReducedBasicFsi(fsiBasic& problem);
+        ~ReducedBasicFsi() {};
 
-        /// Variables
+    // Variables
+    /// full problem
+	//fsiBasic* problem;
+	//volScalarModes Pmodes;
+	//volVectorModes Umodes;
+	//pointVectorModes Dmodes;
+    fsiBasic* problem;
+    volScalarModes Pmodes;
+    volVectorModes Umodes;
+    pointVectorModes Dmodes;
+   
+    ///////// time control variables
+    scalar startTime = 0.0;
+    scalar finalTime = 0.0;
+    scalar timeStep = 0.0;
+    scalar writeEvery = timeStep;
+    scalar nextWrite = 0.0;
+    /// List scalar for access the centerofmass
+    List<scalar> centerofmassx;
+    List<scalar> centerofmassy;
+    List<scalar> centerofmassz;
+     /// List scalar for access the velocities of the centerofmass
+    List<scalar> velx;
+    List<scalar> vely;
+    List<scalar> velz;
+     /// List to save lift and drag forces
+    List<scalar> romforcey;
+    List<scalar> romforcex;
+    // for saving pod interpolation  coefficients using rbf
+    List<scalar> pdcoeffrbf;
+    /// List of POD coefficients
+    List<Eigen::MatrixXd> CoeffU;
+    List<Eigen::MatrixXd> CoeffP;
 
-        /// Lifted velocity modes.
-        volVectorModes ULmodes;
-        /// Pointer to the Full problem.
-        fsiBasic* problem;
-        /// Scalar to store the current time
-        scalar time;
-        /// Scalar to store the time increment
-        double dt;
+    PtrList<volScalarField> PredFields;
+    PtrList<volVectorField> UredFields;
+    PtrList<pointVectorField> DfieldRbf;
+    PtrList<pointVectorField> Dfield;
+    PtrList<volScalarField> Pfield;
+    PtrList<volVectorField> Ufield;
 
-        /// Scalar to store the final time if the online simulation
-        scalar finalTime;
 
-        /// Scalar to store the initial time if the online simulation
-        scalar tstart;
 
-        /// A variable for storing the reduced coefficients
-        double storeEvery;
+    label counter = problem->counter;
 
-        /// A variable for exporting the fields
-        double exportEvery;
+	// /// time control variables
+	// scalar startTime = 0.0;
+	// scalar finalTime = 0.0;
+	// scalar timeStep = 0.0;
+	// scalar writeEvery = timeStep;
+	// scalar nextWrite = 0.0;
 
-        /// Projected gradient of the pressure modes.
-        Eigen::MatrixXd projGradModP;
+	// /// List scalar for access the centerOfmass
+	// List<scalar> centerofmassx;
+	// List<scalar> centerofmassy;
+	// List<scalar> centerofmassz;
 
-        /// Imposed boundary conditions.
-        Eigen::MatrixXd vel_now;
+	// /// List scalar for access the velocities of the centreOfmass
+	// List<scalar> velx;
+	// List<scalar> vely;
+	// List<scalar> velz;
 
-        /// Maximum iterations number for the online step
-        int maxIterOn = 1000;
+	// /// List to save lift and drag forces in the reduced level
+	// List<scalar> romforcey;
+	// List<scalar> romforcex;
+ //    /// Reduced level fields
+	// PtrList<volScalarField> PredFields;
+	// PtrList<volVectorField> UredFields;
+	// PtrList<pointVectorField> Dfield;
 
-        /// Counter.
-        int counter = 0;
+	// label counter;
 
-        int UprojN;
-        int PprojN;
-        // Set the initial time
-        // instantList Times = runTime.times();
-        // runTime.setEndTime(finalTime);
+    // Function to perform the online phase
+    void solveOnline_Pimple(scalar mu_now, int NmodesUproj, int NmodesPproj, int NmodesDproj, fileName folder = "./ITHACAoutput/Reconstruct/");
+    ///
+    /// @brief      It checks if the number of imposed boundary conditions is correct
+    /// and set the inlet velocity equal to the given one.
+    ///
+    /// @param[in]  vel   Inlet velocity
+    ///
+    //void setOnlineVelocity(Eigen::MatrixXd vel);
 
-        // // Perform a TruthSolve
-        // runTime.setTime(Times[1], 1);
-        // runTime.setDeltaT(timeStep);
-        // nextWrite = tstart; // timeStep initialization
+    bool checkWrite(Time& timeObject);
 
-        // Function to perform the online phase
-        void solveOnline_Pimple(scalar mu_now, int NmodesUproj, int NmodesPproj, int NmodesSup = 0, fileName  folder = "./ITHACAoutput/Reconstruct/");
-        ///
-        /// @brief      It checks if the number of imposed boundary conditions is correct
-        /// and set the inlet velocity equal to the given one.
-        ///
-        /// @param[in]  vel   Inlet velocity
-        ///
-        void setOnlineVelocity(Eigen::MatrixXd vel);
+    void PodIpointDispl(Eigen::MatrixXd coeffL2, Eigen::MatrixXd muu,  label NPdModes);
+
 };
+
+#endif
 

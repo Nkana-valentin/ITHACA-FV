@@ -132,10 +132,10 @@ template double errorFrobRel(GeometricField<vector, fvPatchField, volMesh>&
                              field1,
                              GeometricField<vector, fvPatchField, volMesh>& field2, List<label>* labels);
 
-template double errorFrobRel(GeometricField<scalar, fvsPatchField, surfaceMesh>&
-                             field1,
-                             GeometricField<scalar, fvsPatchField, surfaceMesh>& field2,
-                             List<label>* labels);
+// template double errorFrobRel(GeometricField<vector, pointPatchField, pointMesh>&
+//                              field1,
+//                              GeometricField<vector, pointPatchField, pointMesh>& field2,
+//                              List<label>* labels);
 
 
 template<typename T>
@@ -218,6 +218,17 @@ double errorL2Abs(GeometricField<scalar, fvPatchField, volMesh>& field1,
     return err;
 }
 
+// template<>
+// double errorL2Abs(GeometricField<scalar, pointPatchField, pointMesh>& field1,
+//                   GeometricField<scalar, pointPatchField, pointMesh>& field2, pointVectorField& Volumes)
+
+// {
+//     volScalarField diffFields2 = (((field1 - field2) * (field1 - field2)) *
+//                                   Volumes).ref();
+//     double err = Foam::sqrt(gSum(diffFields2));
+//     return err;
+// }
+
 template<typename T>
 double errorL2Abs(GeometricField<T, fvPatchField, volMesh>& field1,
                   GeometricField<T, fvPatchField, volMesh>& field2, List<label>* labels)
@@ -289,6 +300,7 @@ Eigen::MatrixXd errorFrobRel(PtrList<GeometricField<T, fvPatchField, volMesh>>&
     return err;
 }
 
+
 template Eigen::MatrixXd errorFrobRel(
     PtrList<GeometricField<scalar, fvPatchField, volMesh>>& fields1,
     PtrList<GeometricField<scalar, fvPatchField, volMesh>>& fields2,
@@ -297,6 +309,10 @@ template Eigen::MatrixXd errorFrobRel(
     PtrList<GeometricField<vector, fvPatchField, volMesh>>& fields1,
     PtrList<GeometricField<vector, fvPatchField, volMesh>>& fields2,
     List<label>* labels);
+// template Eigen::MatrixXd errorFrobRel(
+//     PtrList<GeometricField<vector, pointPatchField, pointMesh>>& fields1,
+//     PtrList<GeometricField<vector, pointPatchField, pointMesh>>& fields2,
+//     List<label>* labels);
 
 
 template<typename T>
@@ -330,6 +346,11 @@ template Eigen::MatrixXd errorL2Abs(
     PtrList<GeometricField<vector, fvPatchField, volMesh>>& fields2,
     PtrList<volScalarField>& Volumes);
 
+// template Eigen::MatrixXd errorL2Abs(
+//     PtrList<GeometricField<vector, pointPatchField, pointMesh>>& fields1,
+//     PtrList<GeometricField<vector, pointPatchField, pointMesh>>& fields2,
+//     PtrList<pointVectorField>& Volumes);
+
 template<typename T>
 Eigen::MatrixXd errorL2Abs(PtrList<GeometricField<T, fvPatchField, volMesh>>&
                            fields1,
@@ -362,6 +383,11 @@ template Eigen::MatrixXd errorL2Abs(
     PtrList<GeometricField<vector, fvPatchField, volMesh>>& fields1,
     PtrList<GeometricField<vector, fvPatchField, volMesh>>& fields2,
     List<label>* labels);
+
+// template Eigen::MatrixXd errorL2Abs(
+//     PtrList<GeometricField<vector, pointPatchField, pointMesh>>& fields1,
+//     PtrList<GeometricField<vector, pointPatchField, pointMesh>>& fields2,
+//     List<label>* labels);
 
 template<typename T>
 double errorL2Rel(GeometricField<T, fvPatchField, volMesh>& field1,
@@ -421,6 +447,10 @@ template double errorL2Rel(GeometricField<vector, fvPatchField, volMesh>&
                            field1,
                            GeometricField<vector, fvPatchField, volMesh>& field2, List<label>* labels);
 
+// template double errorL2Rel(GeometricField<vector, pointPatchField, pointMesh>&
+//                            field1,
+//                            GeometricField<vector, pointPatchField, pointMesh>& field2, List<label>* labels);
+
 template<typename T>
 Eigen::MatrixXd errorL2Rel(PtrList<GeometricField<T, fvPatchField, volMesh>>&
                            fields1, PtrList<GeometricField<T, fvPatchField, volMesh>>& fields2,
@@ -454,6 +484,11 @@ template Eigen::MatrixXd errorL2Rel(
     PtrList<GeometricField<vector, fvPatchField, volMesh>>& fields2,
     List<label>* labels);
 
+// template Eigen::MatrixXd errorL2Rel(
+//     PtrList<GeometricField<vector, pointPatchField, pointMesh>>& fields1,
+//     PtrList<GeometricField<vector, pointPatchField, pointMesh>>& fields2,
+//     List<label>* labels);
+
 template<>
 double H1Seminorm(GeometricField<scalar, fvPatchField, volMesh>& field)
 {
@@ -484,6 +519,8 @@ double frobNorm(GeometricField<Type, PatchField, GeoMesh>& field)
 
 template double frobNorm(GeometricField<scalar, fvPatchField, volMesh>& field);
 template double frobNorm(GeometricField<vector, fvPatchField, volMesh>& field);
+template double frobNorm(GeometricField<vector, pointPatchField, pointMesh>& field);
+template double frobNorm(GeometricField<scalar, pointPatchField, pointMesh>& field);
 
 double L2normOnPatch(fvMesh& mesh, volScalarField& field,
                      word patch)

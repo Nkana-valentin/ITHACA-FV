@@ -77,10 +77,11 @@ fsiBasic::fsiBasic(int argc, char* argv[])
 #include "createFields.H" 
         para = ITHACAparameters::getInstance(mesh, runTime); 
         point0 = mesh.points();  
-
-
         Info << offline << endl;
     /// Number of velocity modes to be calculated
+
+        Info << offline << endl;
+        /// Number of velocity modes to be calculated
         NUmodesOut = para->ITHACAdict->lookupOrDefault<label>("NmodesUout", 15);
         /// Number of pressure modes to be calculated
         NPmodesOut = para->ITHACAdict->lookupOrDefault<label>("NmodesPout", 15);
@@ -92,6 +93,7 @@ fsiBasic::fsiBasic(int argc, char* argv[])
         NPmodes = para->ITHACAdict->lookupOrDefault<label>("NmodesPproj", 10);
         /// Number of nut modes used for the projection
         NNutModes = para->ITHACAdict->lookupOrDefault<label>("NmodesNutProj", 0);
+
               
 }
 
@@ -105,30 +107,19 @@ void fsiBasic::truthSolve(List<scalar> mu_now, fileName folder)
     pimpleControl& pimple = _pimple();
     volScalarField& p = _p();
     volVectorField& U = _U();
+    //volVectorField U0(U);
+    //volScalarField p0(p);
     IOMRFZoneList& MRF = _MRF();
     //surfaceVectorField& Uf = _Uf();
     singlePhaseTransportModel& laminarTransport = _laminarTransport();
     instantList Times = runTime.times();
     runTime.setEndTime(finalTime);
-    //label BCind = 5;
-    //auto dd = sDRBMS().pointDisplacement().boundaryFieldRef()[BCind].patchInternalField()();// 
-    // sDRBMS().pointDisplacement().boundaryFieldRef()[BCind].patchInternalField() 
-    // //return a tmp<foam::field><Foam::vector<double>>; with ()() return a Foam::Field<vector<double>>
-    // std::cout << "/////////////////////////////////////////////////////////////" << "\n";
-    // Info << dd << "\n"; 
-    // auto ddtoeigen = Foam2Eigen::field2Eigen(dd);
-
-    // Perform a TruthSolve
     runTime.setTime(Times[1], 1);
     runTime.setDeltaT(timeStep);
     nextWrite = startTime; // timeStep initialization
 
     dictionary dictCoeffs(dyndict->findDict("sixDoFRigidBodyMotionCoeffs"));
     Foam::functionObjects::forces fomforces("fomforces", mesh, dictCoeffs);
-   
-    // /// construct a sixDoFRigidBodyMotionSolver object
-    // sixDoFRigidBodyMotionSolver sDRBMS(mesh, dynamicMeshDict);
-    // Info << sDRBMS.curPoints()[10000] << endl;
 
     turbulence->validate();
 #include "createUfIfPresent.H"
@@ -146,6 +137,23 @@ void fsiBasic::truthSolve(List<scalar> mu_now, fileName folder)
     // // interpolation.
     // counter++;
     // nextWrite += writeEvery;
+    // ITHACAstream::exportSolution(U, name(counter), folder);
+    // ITHACAstream::exportSolution(p, name(counter), folder);
+    // ITHACAstream::exportSolution(sDRBMS().pointDisplacement(), name(counter), folder);
+    // ITHACAstream::writePoints(meshPtr().points(), folder, name(counter) + "/polyMesh/");
+
+    // std::ofstream of(folder + name(counter) + "/" + runTime.timeName());
+    // Ufield.append((U).clone());
+    // Pfield.append(p.clone());
+    // GridPoints.append(meshPtr().points().clone());
+    // Ufield.append((U).clone());
+    // Pfield.append(p.clone());
+    // GridPoints.append(meshPtr().points().clone());
+    //Dfield.append(sDRBMS().pointDisplacement().clone()); // don't save the first snap of pdisp
+    // initial condition for pointDisplacement because it is 0 and rbf will complain during 
+    // interpolation.
+    //counter++;
+    //nextWrite += writeEvery;
 
     Info<< "\nStarting time loop\n" << endl;
 
@@ -175,6 +183,17 @@ void fsiBasic::truthSolve(List<scalar> mu_now, fileName folder)
 
                 mesh.movePoints(sDRBMS().curPoints());
                 // std::cerr << "################"<< "Before six dof motion solver" << "#############"<< std::endl;
+                fomforcex.append(fomforces.forceEff().x());
+                fomforcey.append(fomforces.forceEff().y());
+                centerofmassx.append(sDRBMS().motion().centreOfMass().x());
+                // centerofmassy.append(sDRBMS().motion().centreOfMass().y());
+                centerofmassz.append(sDRBMS().motion().centreOfMass().z());
+                // To append the linear velocities
+                // velx.append(sDRBMS().motion().v().x());
+                // vely.append(sDRBMS().motion().v().y());
+                // velz.append(sDRBMS().motion().v().z());
+                // mesh.movePoints(sDRBMS().curPoints());                
+
                 if (mesh.changing())
                 {
                     MRF.update();
@@ -218,16 +237,21 @@ void fsiBasic::truthSolve(List<scalar> mu_now, fileName folder)
         if (checkWrite(runTime))
         {
 
-            fomforcex.append(fomforces.forceEff().x());
-            fomforcey.append(fomforces.forceEff().y());
-            centerofmassx.append(sDRBMS().motion().centreOfMass().x());
+            // fomforcex.append(fomforces.forceEff().x());
+            // fomforcey.append(fomforces.forceEff().y());
+            //centerofmassx.append(sDRBMS().motion().centreOfMass().x());
             centerofmassy.append(sDRBMS().motion().centreOfMass().y());
             centerofmassz.append(quaternion(sDRBMS().motion().orientation()).eulerAngles(quaternion::XYZ).z());
             //omegaz.append(alffa );
             // To append the linear velocities
-            velx.append(sDRBMS().motion().v().x());
-            vely.append(sDRBMS().motion().v().y());
-            velz.append(sDRBMS().motion().v().z());
+            // velx.append(sDRBMS().motion().v().x());
+            // vely.append(sDRBMS().motion().v().y());
+            // velz.append(sDRBMS().motion().v().z());
+            // centerofmassz.append(sDRBMS().motion().centreOfMass().z());
+            // // To append the linear velocities
+            // velx.append(sDRBMS().motion().v().x());
+            // vely.append(sDRBMS().motion().v().y());
+            // velz.append(sDRBMS().motion().v().z());
             ITHACAstream::exportSolution(U, name(counter), folder);
             ITHACAstream::exportSolution(p, name(counter), folder);
             ITHACAstream::exportSolution(sDRBMS().pointDisplacement(), name(counter), folder);
@@ -237,7 +261,7 @@ void fsiBasic::truthSolve(List<scalar> mu_now, fileName folder)
             Ufield.append(U.clone());
             Pfield.append(p.clone());
             Dfield.append(sDRBMS().pointDisplacement().clone());
-            
+      
             counter++;
             nextWrite += writeEvery;
 
@@ -335,6 +359,7 @@ void fsiBasic::liftSolve()
             pRefCell, 
             pRefValue
         );
+//#include "createUfIfPresent.H"
         mesh.setFluxRequired(Phi.name());
         runTime.functionObjects().start();
         MRF.makeRelative(phi);
@@ -353,7 +378,7 @@ void fsiBasic::liftSolve()
             phiHbyA += MRF.zeroFilter(fvc::interpolate(rAU));
         }
 
-        // MRF.makeRelative(phiHbyA);
+        MRF.makeRelative(phiHbyA);
 
         if (p.needReference())
         {
@@ -426,6 +451,7 @@ void fsiBasic::restart()
     _phi.clear();
     _Uf.clear();
     _pointDisplacement.clear();
+    //_pd.clear();
     sDRBMS.clear();
     argList& args = _args();
     Time& runTime = _runTime();
@@ -443,16 +469,9 @@ void fsiBasic::restart()
                            mesh
                        )
                );
-
-    // _p() = _p0();
-    // _U() = _U0();
-    // _phi() = _phi0();
-
-    //pimpleControl& pimple = _pimple();
     
 #include "createFields.H" 
 }
-
 
 
 void fsiBasic::PodIpointDispl(Eigen::MatrixXd muu,  label NPdModes)
@@ -463,11 +482,13 @@ void fsiBasic::PodIpointDispl(Eigen::MatrixXd muu,  label NPdModes)
     }
 
     coeffL2 = ITHACAutilities::getCoeffs(Dfield, Dmodes, NPdModes, false);
+    std::cout << "=======================================================" << "\n";
+std::cout << coeffL2 << std::endl;
     samples.resize(NPdModes);
     rbfSplines.resize(NPdModes);
     Eigen::MatrixXd weights;
   
-
+   std::cout << "=======================================================" << "\n";
     for (label i = 0; i < NPdModes; i++) // i is the nnumber of th mode
     {
         word weightName = "wRBF_M" + name(i + 1);
@@ -475,13 +496,14 @@ void fsiBasic::PodIpointDispl(Eigen::MatrixXd muu,  label NPdModes)
         if (ITHACAutilities::check_file("./ITHACAoutput/weights/" + weightName))
         {
             samples[i] = new SPLINTER::DataTable(1, 1);
-            for (label j = 0; j < coeffL2.cols();
-                    j++) // j is the number of the nut snapshot
+            for (label j = 0; j < coeffL2.cols(); j++) // j is the number of the nut snapshot
             {
                 samples[i]->addSample(muu.row(j), coeffL2(i, j));
+                   std::cout << "=======================================================" << "\n";
             }
 
             ITHACAstream::ReadDenseMatrix(weights, "./ITHACAoutput/weights/", weightName);
+               std::cout << "=======================================================" << "\n";
             rbfSplines[i] = new SPLINTER::RBFSpline(*samples[i],
                                                     SPLINTER::RadialBasisFunctionType::GAUSSIAN, weights);
             std::cout << "Constructing RadialBasisFunction for mode " << i + 1 << std::endl;

@@ -22,7 +22,7 @@
   You should have received a copy of the GNU Lesser General Public License
   along with ITHACA-FV. If not, see <http://www.gnu.org/licenses/>.
  \*---------------------------------------------------------------------------*/
-std::cout << "*****create fields of a  dynamic case****\n"<< std::endl; 
+std::cout << "***** Create fields of a dynamic case ****\n"<< std::endl; 
 Info << "Reading field p\n" << endl;
 _p = autoPtr<volScalarField>
      (
@@ -117,6 +117,27 @@ _phi0 = autoPtr<surfaceScalarField>
         (
             new surfaceScalarField(phi0)
         );
+
+Info<< "Constructing face velocity Uf \n" << endl;
+     _Uf.reset
+     (
+
+           new surfaceVectorField
+           (
+               IOobject
+               (
+                    "Uf",
+                    runTime.timeName(),
+                    mesh,
+                    IOobject::READ_IF_PRESENT,
+                    IOobject::AUTO_WRITE
+               ),
+               fvc::interpolate(U)
+           )
+      );
+       
+//autoPtr<surfaceVectorField> Uf.reset(_Uf());
+
 const pointMesh& pMesh = pointMesh::New(mesh);
 _pointDisplacement = autoPtr<pointVectorField>
        (
@@ -137,23 +158,24 @@ _pointDisplacement = autoPtr<pointVectorField>
        );
 pointVectorField& pointDisplacement = _pointDisplacement();
 
-
-// const pointMesh& pMesh = pointMesh::New(mesh);
-
-//     pointVectorField U
-//     (
-//         IOobject
-//         (
-//             "U",
-//             runTime.timeName(),
-//             mesh,
-//             IOobject::NO_READ,
-//             IOobject::AUTO_WRITE
-//         ),
-//         pMesh,
-//         dimensionedVector(dimLength, Zero),
-//         pointPatchVectorField::calculatedType()
-//     );
+_scale = autoPtr<pointScalarField>
+       (
+           new pointScalarField
+           (
+               IOobject
+                  (
+                      "motionScale",
+                      mesh.time().timeName(),
+                      mesh,
+                      IOobject::NO_READ,
+                      IOobject::NO_WRITE,
+                      false
+                  ),
+                  pointMesh::New(mesh),
+                  dimensionedScalar(dimless, Zero)
+           )
+       );
+pointScalarField& scale = _scale();
 
 label pRefCell = 0;
 scalar pRefValue = 0.0;
@@ -182,25 +204,27 @@ _MRF = autoPtr<IOMRFZoneList>
 _fvOptions = autoPtr<fv::options>(new fv::options(mesh));
 
 
-    dyndict = new IOdictionary
+dyndict = new IOdictionary
+        (
+            IOobject
             (
-                IOobject
-                (
-                    "dynamicMeshDict",
-                    mesh.time().constant(),
-                    mesh,
-                    IOobject::MUST_READ,
-                    IOobject::NO_WRITE,
-                    false
-                )
-            );
-    /// construct a sixDoFRigidBodyMotionSolver object
-    sDRBMS = autoPtr<sixDoFRigidBodyMotionSolver>
-    (
-    new sixDoFRigidBodyMotionSolver(mesh, *dyndict)
-    );
+                "dynamicMeshDict",
+                mesh.time().constant(),
+                mesh,
+                IOobject::MUST_READ,
+                IOobject::NO_WRITE,
+                false
+            )
+        );
+/// construct a sixDoFRigidBodyMotionSolver object
+sDRBMS = autoPtr<sixDoFRigidBodyMotionSolver>
+(
+new sixDoFRigidBodyMotionSolver(mesh, *dyndict)
+);
 
-    pimpleControl& pimple = _pimple();
-    correctPhi = pimple.dict().getOrDefault("correctPhi",mesh.dynamic());
-    checkMeshCourantNo = pimple.dict().getOrDefault("checkMeshCourantNo",false);
-    moveMeshOuterCorrectors = pimple.dict().getOrDefault("moveMeshOuterCorrectors",false);
+pimpleControl& pimple = _pimple();
+correctPhi = pimple.dict().getOrDefault("correctPhi",mesh.dynamic());
+checkMeshCourantNo = pimple.dict().getOrDefault("checkMeshCourantNo",false);
+moveMeshOuterCorrectors = pimple.dict().getOrDefault("moveMeshOuterCorrectors",false);
+//dictionary coeffDict(dyndict->findDict("sixDoFRigidBodyMotionCoeffs"));
+

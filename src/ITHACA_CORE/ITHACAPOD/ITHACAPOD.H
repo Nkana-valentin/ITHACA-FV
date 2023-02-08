@@ -356,6 +356,19 @@ void getModes(PtrList<Field_type>& snapshots, PtrList<Field_type>& modes,
 
 };
 
+//-------------------------------------------------------------------------------------
+/// @brief      Gets Modes of a given Snapshot Matrix 
+///
+/// @param      snapshots_eig is an Eigen Matrix of Field(point, vector, and scalar)
+///
+/// @param      M is the given matrix as default the identity matrix
+///
+/// @tparam     sField    Type of field snapshots (vectorField, pointField, and scalarField)
+/// @
+
+template<class sField>
+Eigen::MatrixXd getModesField(Eigen::MatrixXd& snapshots_eig, Eigen::MatrixXd& M);
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #endif

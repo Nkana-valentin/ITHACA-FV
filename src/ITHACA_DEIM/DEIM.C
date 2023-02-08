@@ -80,6 +80,8 @@ DEIM<T>::DEIM (PtrList<T>& s, label MaxModes, word FunctionName, word FieldName)
         Eigen::VectorXd r;
         Eigen::VectorXd rho(1);
         MatrixModes = Foam2Eigen::PtrList2Eigen(modes);
+        Ncells = modes[0].size();
+      
         int ind_max = 0;
         int  c1 = 0; 
         int  xyz_in = 0;
@@ -137,7 +139,9 @@ DEIM<T>::DEIM (PtrList<T>& s, label MaxModesA, label MaxModesB, word MatrixName)
     runSubMeshB(false)
 
 {
+    //std::cout << " ####################################" << std::endl;
     ITHACAparameters* para(ITHACAparameters::getInstance());
+      //std::cout << " ####################################" << std::endl;  
     FolderM = "ITHACAoutput/DEIM/" + MatrixName;
     magicPointsArow = autoPtr<IOList<label>>
                       (
@@ -154,6 +158,7 @@ DEIM<T>::DEIM (PtrList<T>& s, label MaxModesA, label MaxModesB, word MatrixName)
                               )
                           )
                       );
+
     magicPointsAcol = autoPtr<IOList<label>>
                       (
                           new IOList<label>
@@ -201,6 +206,7 @@ DEIM<T>::DEIM (PtrList<T>& s, label MaxModesA, label MaxModesB, word MatrixName)
                        )
                    )
                );
+
     xyz_Acol = autoPtr<IOList<label>>
                (
                    new IOList<label>
@@ -231,7 +237,7 @@ DEIM<T>::DEIM (PtrList<T>& s, label MaxModesA, label MaxModesB, word MatrixName)
                         IOobject::NO_WRITE
                     )
                 )
-            );
+            );      
 
     if (!(magicPointsArow().headerOk() && magicPointsAcol().headerOk() &&
             magicPointsB().headerOk() && xyz_Arow().headerOk() &&
@@ -820,6 +826,10 @@ template DEIM<fvScalarMatrix>::DEIM (PtrList<fvScalarMatrix>& s,
 template DEIM<fvVectorMatrix>::DEIM (PtrList<fvVectorMatrix>& s,
                                      label MaxModesA,
                                      label MaxModesB, word MatrixName);
+// template DEIM<volScalarField>::DEIM (PtrList<volScalarField>& s,
+//                                      label MaxModesA,
+//                                      label MaxModesB, word MatrixName);
+
 template DEIM<volScalarField>::DEIM(PtrList<volScalarField>& s, label MaxModes,
                                     word FunctionName, word FieldName);
 template DEIM<volVectorField>::DEIM(PtrList<volVectorField>& s, label MaxModes,
@@ -827,6 +837,9 @@ template DEIM<volVectorField>::DEIM(PtrList<volVectorField>& s, label MaxModes,
 template DEIM<surfaceScalarField>::DEIM(PtrList<surfaceScalarField>& s, label MaxModes,
                                     word FunctionName, word FieldName);
 // template DEIM<surfaceVectorField>::DEIM(PtrList<surfaceVectorField>& s, label MaxModes,
+//                                     word FunctionName, word FieldName);
+
+// template DEIM<surfaceScalarField>::DEIM(PtrList<surfaceScalarField>& s, label MaxModes,
 //                                     word FunctionName, word FieldName);
 
 // Specialization for generateSubFieldMatrix
