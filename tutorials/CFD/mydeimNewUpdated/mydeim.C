@@ -309,7 +309,7 @@ public:
         {
             dynamicFvMesh& mesh = meshPtr();
             DEIMObject = new vVf(Tfield, NmodesS, "convectiveterm", _T().name());
-            DEIMObject->subfield = autoPtr<volVectorField>(new volVectorField(DEIMObject->generateSubmesh(0, mesh, _T())));
+            DEIMObject->subfield = autoPtr<volVectorField>(new volVectorField(DEIMObject->generateSubmesh(1, mesh, _T())));
 
             // Lt = new vVf(Ufield, NmodesS, "U", _U().name());
             // Lt->subfield = autoPtr<volVectorField>(new volVectorField(Lt->generateSubmesh(0, mesh, _U())));
@@ -764,7 +764,7 @@ int main(int argc, char* argv[])
     FSIDEIM fsideim(argc, argv);
     ITHACAparameters* para = ITHACAparameters::getInstance(fsideim.meshPtr(), fsideim._runTime());
     fsideim.startTime = 0.0;
-    fsideim.finalTime = 5;
+    fsideim.finalTime = 2;
     fsideim.timeStep = 0.01;
     fsideim.writeEvery = 0.01;
     //Perform the offline solve

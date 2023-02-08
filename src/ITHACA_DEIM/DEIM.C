@@ -83,9 +83,9 @@ DEIM<T>::DEIM (PtrList<T>& s, label MaxModes, word FunctionName, word FieldName)
         int ind_max = 0;
         int  c1 = 0; 
         int  xyz_in = 0;
-
         Ncells = modes[0].size();
         //label ind_max, c1, xyz_in;
+        Ncells = modes[0].size();
         double max = MatrixModes.cwiseAbs().col(0).maxCoeff(&ind_max, &c1);
         check3DIndices(ind_max, xyz_in);
         rho(0) = max;
@@ -94,7 +94,6 @@ DEIM<T>::DEIM (PtrList<T>& s, label MaxModes, word FunctionName, word FieldName)
         U = MatrixModes.col(0);
         P.resize(MatrixModes.rows(), 1);
         P.insert(ind_max, 0) = 1;
-
         for (label i = 1; i < MaxModes; i++)
         {
             A = P.transpose() * U;
