@@ -77,6 +77,21 @@ fsiBasic::fsiBasic(int argc, char* argv[])
 #include "createFields.H" 
         para = ITHACAparameters::getInstance(mesh, runTime); 
         point0 = mesh.points();  
+
+
+        Info << offline << endl;
+    /// Number of velocity modes to be calculated
+        NUmodesOut = para->ITHACAdict->lookupOrDefault<label>("NmodesUout", 15);
+        /// Number of pressure modes to be calculated
+        NPmodesOut = para->ITHACAdict->lookupOrDefault<label>("NmodesPout", 15);
+        /// Number of nut modes to be calculated
+        NNutModesOut = para->ITHACAdict->lookupOrDefault<label>("NmodesNutOut", 15);
+        /// Number of velocity modes used for the projection
+        NUmodes = para->ITHACAdict->lookupOrDefault<label>("NmodesUproj", 10);
+        /// Number of pressure modes used for the projection
+        NPmodes = para->ITHACAdict->lookupOrDefault<label>("NmodesPproj", 10);
+        /// Number of nut modes used for the projection
+        NNutModes = para->ITHACAdict->lookupOrDefault<label>("NmodesNutProj", 0);
               
 }
 
@@ -137,7 +152,8 @@ void fsiBasic::truthSolve(List<scalar> mu_now, fileName folder)
     while (runTime.run())
     {
 
-
+#include "CourantNo.H"
+        
         runTime.setEndTime(finalTime);
         runTime++;
 
@@ -196,7 +212,9 @@ void fsiBasic::truthSolve(List<scalar> mu_now, fileName folder)
                 turbulence->correct();
             }
         }
-        
+        std::cout << "/////////////" << runTime.deltaTValue() << "////////////" << std::endl;
+        scalar alffa = sDRBMS().motion().omega().z() / runTime.deltaTValue();
+
         if (checkWrite(runTime))
         {
 
@@ -204,7 +222,8 @@ void fsiBasic::truthSolve(List<scalar> mu_now, fileName folder)
             fomforcey.append(fomforces.forceEff().y());
             centerofmassx.append(sDRBMS().motion().centreOfMass().x());
             centerofmassy.append(sDRBMS().motion().centreOfMass().y());
-            centerofmassz.append(sDRBMS().motion().centreOfMass().z());
+            centerofmassz.append(quaternion(sDRBMS().motion().orientation()).eulerAngles(quaternion::XYZ).z());
+            //omegaz.append(alffa );
             // To append the linear velocities
             velx.append(sDRBMS().motion().v().x());
             vely.append(sDRBMS().motion().v().y());
@@ -218,8 +237,7 @@ void fsiBasic::truthSolve(List<scalar> mu_now, fileName folder)
             Ufield.append(U.clone());
             Pfield.append(p.clone());
             Dfield.append(sDRBMS().pointDisplacement().clone());
-            GridPoints.append(meshPtr().points().clone());
-            //sixDofList.append(sDRBMS()() );
+            
             counter++;
             nextWrite += writeEvery;
 

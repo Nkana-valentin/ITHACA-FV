@@ -88,6 +88,8 @@ template volVectorField computeAverage(
     PtrList<volVectorField>& fields);
 template volScalarField computeAverage(
     PtrList<volScalarField>& fields);
+template pointVectorField computeAverage(
+    PtrList<pointVectorField>& fields);
 
 
 template<typename Type>
@@ -159,13 +161,15 @@ void assignBC(GeometricField<vector, pointPatchField, pointMesh>& s, label BC_in
 {
     label sizeBC = s.boundaryField()[BC_ind].size();
     List<double> valueList(sizeBC);
+    std::cout << "============== inside assignBC with value double ==================="<< std::endl;
+
 
     for (label i = 0; i < sizeBC; i++)
     {
         valueList[i] = value;
     }
 
-    assignBC(s, BC_ind, value);//valueList
+    assignBC(s, BC_ind, valueList);//valueList
 }
 //////////////////////////////////////////////////////////////////////////////////
 void assignBC(GeometricField<scalar, fvPatchField, volMesh>& s, label BC_ind,
@@ -260,7 +264,11 @@ void assignBC(GeometricField<vector, pointPatchField, pointMesh>& s, label BC_in
               List<double> valueList)
 {
     word typeBC = s.boundaryField()[BC_ind].type();
+
+    //std::cout << "==============" << typeBC << "==================="<< std::endl;
     label sizeBC = s.boundaryField()[BC_ind].size();
+    std::cout << "============== inside assignBC with list of double ==================="<< std::endl;
+
     M_Assert(sizeBC == valueList.size(),
              "The size of the given values list has to be equal to the dimension of the boundaryField");
     ITHACAparameters* para(ITHACAparameters::getInstance());
@@ -276,24 +284,8 @@ void assignBC(GeometricField<vector, pointPatchField, pointMesh>& s, label BC_in
             gradTpatch[faceI] = value;
         }
     }
-    // else if (typeBC == "freestream")
-    // {
-    //     for (label i = 0; i < sizeBC; i++)
-    //     {
-    //         double value = valueList[i];
-    //         s.boundaryFieldRef()[BC_ind][i] = value;
-    //     }
 
-    //     freestreamFvPatchField<scalar>& Tpatch =
-    //         refCast<freestreamFvPatchField<scalar>>(s.boundaryFieldRef()[BC_ind]);
-    //     scalarField& gradTpatch = Tpatch.freestreamValue();
-    //     forAll(gradTpatch, faceI)
-    //     {
-    //         double value = valueList[faceI];
-    //         gradTpatch[faceI] = value;
-    //     }
-    // }
-    else if (typeBC == "empty" || typeBC == "zeroGradient")
+    else if (typeBC == "empty")
     {}
     else
     {
@@ -320,6 +312,8 @@ void assignBC(GeometricField<vector, pointPatchField, pointMesh>& s, label BC_in
         for (label i = 0; i < sizeBC; i++)
         {
             double value = valueList[i];
+            //Info << "====================" << s.boundaryFieldRef()[BC_ind][i] << "=================="<< endl;
+            //s.primitiveFieldRef()[BC_ind][i] = value;
             s.primitiveFieldRef()[BC_ind][i] = value;
         }
     }
@@ -361,17 +355,39 @@ void assignBC(GeometricField<vector, fvPatchField, volMesh>& s, label BC_ind,
     assignBC(s, BC_ind, valueList);
 }
 
+
+void assignBC(GeometricField<vector, pointPatchField, pointMesh>& s, label BC_ind, vector value)
+{
+    M_Assert(value.size() == 3, "The size of the given vector has to be equal to 3 for the 3 components");
+    label sizeBC = s.boundaryField()[BC_ind].size();
+    List<vector> valueList(sizeBC);
+    Info << "======================= Inside assignBC 364 ======================"<< endl;
+
+    for (label i = 0; i < sizeBC; i++)
+    {
+        valueList[i] = value;
+    }
+
+    assignBC(s, BC_ind, valueList);
+}
+
 void assignBC(GeometricField<vector, pointPatchField, pointMesh>& s, label BC_ind,
               Eigen::MatrixXd valueVec)
 {
     label sizeBC = s.boundaryField()[BC_ind].size();
     M_Assert(sizeBC * 3 == valueVec.size(),
              "The size of the given values matrix has to be equal to the dimension of the boundaryField");
-    List<double> valueList(sizeBC);
+    //List<double> valueList(sizeBC);
+    List<vector> valueList(sizeBC);
+
 
     for (label i = 0; i < sizeBC; i++)
     {
-        valueList[i] = valueVec(i);
+        //valueList[i] = valueVec(i); /// ?????????
+        //Info << "=======================" << valueList[i] << "======================"<< endl;
+        valueList[i].component(0) = valueVec(i);
+        valueList[i].component(1) = valueVec(i + sizeBC);
+        valueList[i].component(2) = valueVec(i + sizeBC * 2);
         //assignBC(s, BC_ind, valueList[i]);
 
     }
@@ -490,21 +506,6 @@ void assignBC(GeometricField<vector, pointPatchField, pointMesh>& s, label BC_in
         Info << "This Feature is not implemented for this boundary condition" << endl;
         exit(0);
     }
-    // else if (s.boundaryField()[BC_ind].type() == "freestream")
-    // {
-    //     for (label i = 0; i < s.boundaryField()[BC_ind].size(); i++)
-    //     {
-    //         s.boundaryFieldRef()[BC_ind][i] = valueList[i];
-    //     }
-
-    //     freestreamFvPatchField<vector>& Tpatch =
-    //         refCast<freestreamFvPatchField<vector>>(s.boundaryFieldRef()[BC_ind]);
-    //     vectorField& gradTpatch = Tpatch.freestreamValue();
-    //     forAll(gradTpatch, faceI)
-    //     {
-    //         gradTpatch[faceI] = valueList[faceI];
-    //     }
-    //}
     else if (s.boundaryField()[BC_ind].type() == "empty"
              || s.boundaryField()[BC_ind].type() == "zeroGradient")
     {}

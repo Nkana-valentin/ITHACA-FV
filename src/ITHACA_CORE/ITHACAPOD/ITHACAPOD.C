@@ -97,6 +97,8 @@ void getModes(
     bool correctBC)
 {
     ITHACAparameters* para(ITHACAparameters::getInstance());
+    constexpr bool check_vol = std::is_same<volMesh, GeoMesh>::value || std::is_same<surfaceMesh, GeoMesh>::value;
+
     word PODkey = "POD_" + fieldName;
     word PODnorm = para->ITHACAdict->lookupOrDefault<word>(PODkey, "L2");
     M_Assert(PODnorm == "L2" ||
@@ -195,18 +197,29 @@ void getModes(
         //    eigenValueseig.real().array().abs().cwiseInverse().sqrt() ;
         //Eigen::MatrixXd modesEig = (SnapMatrix * eigenVectoreig) *
         //                           eigenValueseigLam.head(nmodes).asDiagonal();
+        std::cout << "##################    line 200 ##########################" << std::endl;
+
         Eigen::MatrixXd modesEig = (SnapMatrix * eigenVectoreig);
         // Computing Normalization factors of the POD Modes
         Eigen::VectorXd V = ITHACAutilities::getMassMatrixFV(snapshots[0]);
-      
+        std::cout << "##################    line 206 ##########################" << std::endl;
+
         Eigen::MatrixXd normFact(nmodes, 1);
 
         for (label i = 0; i < nmodes; i++)
         {
             if (PODnorm == "L2")
             {
-                normFact(i, 0) = std::sqrt((modesEig.col(i).transpose() * V.asDiagonal() *
+
+                if constexpr(check_vol){
+                        normFact(i, 0) = std::sqrt((modesEig.col(i).transpose() * V.asDiagonal() *
                                             modesEig.col(i))(0, 0));
+                }
+
+                else if constexpr(std::is_same<pointMesh, GeoMesh>::value){
+                         normFact(i, 0) = std::sqrt((modesEig.col(i).transpose() * modesEig.col(i))(0, 0));
+                }
+              
 
                 if (Pstream::parRun())
                 {
@@ -478,6 +491,11 @@ template void getWeightedModes(
     word fieldName, bool podex, bool supex, bool sup, label nmodes,
     bool correctBC);
 
+template void getWeightedModes(
+    PtrList<pointVectorField>& snapshots, PtrList<pointVectorField>& modes,
+    word fieldName, bool podex, bool supex, bool sup, label nmodes,
+    bool correctBC);
+
 template<class Type, template<class> class PatchField, class GeoMesh>
 void getModesSVD(
     PtrList<GeometricField<Type, PatchField, GeoMesh>>& snapshots,
@@ -494,8 +512,12 @@ void getModesSVD(
         Info << "####### Performing POD using Singular Value Decomposition for " <<
              snapshots[0].name() << " #######" << endl;
         Eigen::MatrixXd SnapMatrix = Foam2Eigen::PtrList2Eigen(snapshots);
+         //Info << "####### line 502 #######" << endl;
         Eigen::VectorXd V = ITHACAutilities::getMassMatrixFV(snapshots[0]);
+        //std::cout << V << std::endl;
+         //Info << "####### line 504 #######" << endl;
         Eigen::VectorXd V3dSqrt = V.array().sqrt();
+         //Info << "####### line 506 #######" << endl;
         Eigen::VectorXd V3dInv = V3dSqrt.array().cwiseInverse();
         auto VMsqr = V3dSqrt.asDiagonal();
         auto VMsqrInv = V3dInv.asDiagonal();
@@ -736,6 +758,9 @@ template void exportBases(PtrList<volVectorField>& s,
                           PtrList<volVectorField>& bases, word fieldName, bool sup);
 template void exportBases(PtrList<volScalarField>& s,
                           PtrList<volScalarField>& bases, word fieldName, bool sup);
+
+// template void exportBases(PtrList<pointVectorField>& s,
+//                           PtrList<pointVectorField>& bases, word fieldName, bool sup);
 
 void exportEigenvalues(scalarField Eigenvalues, fileName name,
                        bool sup)
@@ -1178,7 +1203,7 @@ template void getModes(
 template void getModes(
     PtrList<pointVectorField>& snapshots, PtrList<pointVectorField>& modes,
     PtrList<volScalarField>& Volumes, word fieldName, bool podex, bool supex,
-    bool sup, label nmodes, bool correctBC);
+    bool sup, label nmodes, bool correctBC=false);
 
 template<typename type_matrix>
 std::tuple<List<Eigen::SparseMatrix<double>>, List<Eigen::VectorXd>>
@@ -1542,13 +1567,11 @@ PtrList<GeometricField<Type, PatchField, GeoMesh>>DEIMmodes(
         Info << "####### Saving the POD bases for " << snapshots[0].name() <<
              " #######" << endl;
         ITHACAutilities::createSymLink("./ITHACAoutput/DEIM");
-         //std::cerr << "ddddddddddddddddddddddddddddddddddddddddddddddd" << std::endl;
         for (label i = 0; i < modes.size(); i++)
         {
             ITHACAstream::exportSolution(modes[i], name(i + 1), "./ITHACAoutput/DEIM",
                                          fieldName);
         }
- //std::cerr << "ddddddddddddddddddddddddddddddddddddddddddddddd" << std::endl;
         Eigen::saveMarketVector(eigenValueseig,
                                 "./ITHACAoutput/DEIM/eigenValues_" + fieldName, para->precision,
                                 para->outytpe);

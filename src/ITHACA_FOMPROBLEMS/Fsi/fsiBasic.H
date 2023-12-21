@@ -93,6 +93,7 @@ class fsiBasic: public unsteadyNS
         List<scalar> centerofmassx;
         List<scalar> centerofmassy;
         List<scalar> centerofmassz;
+        List<scalar> omegaz;
 
          /// List scalar for access the velocities of the centerofmass
         List<scalar> velx;
@@ -111,7 +112,7 @@ class fsiBasic: public unsteadyNS
         Eigen::MatrixXd coeffL2;
 
         Eigen::MatrixXd CylDispl;
-        //PtrList<Eigen::VectorXd> CylDispl;
+        Eigen::MatrixXd CylRot;
         /// The vector of L2 projection coefficients for the pointDisplacement snapshot
         Eigen::VectorXd pdCoeff;
 
@@ -120,17 +121,11 @@ class fsiBasic: public unsteadyNS
 
         /// Create a RBF splines for interpolation
         std::vector<SPLINTER::RBFSpline*> rbfSplines;
-        /// GridPointsd
-        PtrList<pointField> GridPoints;
 
         bool  correctPhi;
         bool  checkMeshCourantNo;
         bool  moveMeshOuterCorrectors;
-
         IOdictionary* dyndict;
-
-        /// List of 6-Dof motion
-        //PtrList<sixDoFRigidBodyMotionSolver> sixDofList;
 
         // Functions
         //--------------------------------------------------------------------------

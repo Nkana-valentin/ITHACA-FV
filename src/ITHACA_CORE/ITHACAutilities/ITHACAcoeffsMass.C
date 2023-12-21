@@ -85,21 +85,45 @@ Eigen::MatrixXd getMassMatrix(
              "The Number of requested modes is larger then the available quantity.");
     Eigen::MatrixXd F = Foam2Eigen::PtrList2Eigen(modes);
     Eigen::MatrixXd M;
+    //bool check_vol = consider_volumes;
+    constexpr bool check_vol = std::is_same<volMesh, GeoMesh>::value || std::is_same<surfaceMesh, GeoMesh>::value;
 
-    if(consider_volumes)
+    //std::cout << "@@@@@@@@@@@@@@@@@@@@@@" << check_vol << "@@@@@@@@@@@@@@@@" << std::endl;
+
+
+    if constexpr(check_vol)
     {
         Eigen::VectorXd V = getMassMatrixFV(modes[0]);
+                //std::cout << "####################  line 97 ########################" << std::endl;
+
         // std::cout << "cols of F is : " << F.cols() << "rows of F is : " << F.rows() << "\n";
         // std::cout << "F.leftCols(Msize) is : " << F.leftCols(Msize).size() << "F.transpose().topRows(Msize) is : " << F.transpose().topRows(Msize).size() << "\n";
 
         // std::cout << "cols of V is : " << V.cols() << "rows of V is : " << V.rows() << "\n";
-        // std::cout << "kdlkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk"<< "\n";
         M = F.transpose().topRows(Msize) * V.asDiagonal() * F.leftCols(Msize);
     }
-    else
+    else if constexpr(std::is_same<pointMesh, GeoMesh>::value)
     {
+        //std::cout << "#################### line 107  ########################" << std::endl;
         M = F.transpose().topRows(Msize) * F.leftCols(Msize);
     }
+
+    // if (consider_volumes)
+    // {
+    //     Eigen::VectorXd V = getMassMatrixFV(modes[0]);
+    //             std::cout << "############################################" << std::endl;
+
+    //     // std::cout << "cols of F is : " << F.cols() << "rows of F is : " << F.rows() << "\n";
+    //     // std::cout << "F.leftCols(Msize) is : " << F.leftCols(Msize).size() << "F.transpose().topRows(Msize) is : " << F.transpose().topRows(Msize).size() << "\n";
+
+    //     // std::cout << "cols of V is : " << V.cols() << "rows of V is : " << V.rows() << "\n";
+    //     M = F.transpose().topRows(Msize) * V.asDiagonal() * F.leftCols(Msize);
+    // }
+    // else
+    // {
+    //     std::cout << "############################################" << std::endl;
+    //     M = F.transpose().topRows(Msize) * F.leftCols(Msize);
+    // }
 
     if (Pstream::parRun())
     {
@@ -148,7 +172,8 @@ Eigen::VectorXd getMassMatrixFV(
     else if constexpr(std::is_same<pointMesh, GeoMesh>::value) {
 
         Eigen::MatrixXd snapEigen = Foam2Eigen::field2Eigen(snapshot);
-        label dim = std::nearbyint(snapEigen.rows() / (snapshot.size()));
+        //std::cout << "====================" << snapshot.mesh()().points().size()<< "=====================" << std::endl;
+        label dim = std::nearbyint(snapEigen.rows() / (snapshot.mesh()().points()).size());
         Eigen::VectorXd pointsdata = Foam2Eigen::field2Eigen(snapshot);
         Eigen::VectorXd points3 = pointsdata.replicate(dim, 1);
         return points3;
@@ -191,13 +216,36 @@ Eigen::VectorXd getCoeffs(GeometricField<Type, PatchField, GeoMesh>&
     Eigen::VectorXd a(Msize);
     Eigen::VectorXd b(Msize);
 
-    if (consider_volumes)
+    constexpr bool check_vol = std::is_same<volMesh, GeoMesh>::value || std::is_same<surfaceMesh, GeoMesh>::value;
+
+    // if (consider_volumes)
+    // {
+    //     Eigen::VectorXd V = getMassMatrixFV(modes[0]);
+    //     b = F.transpose().topRows(Msize) * V.asDiagonal() * snapEigen;
+    // }
+    // else
+    // {
+    //     b = F.transpose().topRows(Msize) * snapEigen;
+    // }
+
+
+    if constexpr(check_vol)
     {
         Eigen::VectorXd V = getMassMatrixFV(modes[0]);
         b = F.transpose().topRows(Msize) * V.asDiagonal() * snapEigen;
+        //std::cout << "############################################" << std::endl;
+
+        // std::cout << "cols of F is : " << F.cols() << "rows of F is : " << F.rows() << "\n";
+        // std::cout << "F.leftCols(Msize) is : " << F.leftCols(Msize).size() << "F.transpose().topRows(Msize) is : " << F.transpose().topRows(Msize).size() << "\n";
+
+        // std::cout << "cols of V is : " << V.cols() << "rows of V is : " << V.rows() << "\n";
+        //M = F.transpose().topRows(Msize) * V.asDiagonal() * F.leftCols(Msize);
+
     }
-    else
+    else if constexpr(std::is_same<pointMesh, GeoMesh>::value)
     {
+        std::cout << "############################################" << std::endl;
+        //M = F.transpose().topRows(Msize) * F.leftCols(Msize);
         b = F.transpose().topRows(Msize) * snapEigen;
     }
 

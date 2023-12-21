@@ -572,8 +572,8 @@ void read_fields(
     fileName casename, int first_snap, int n_snap)
 {
     ITHACAparameters* para(ITHACAparameters::getInstance());
-    //fvMesh& mesh = para->mesh;
-    //const pointMesh& pMesh  = pointMesh::New(field.mesh());
+    fvMesh& mesh = para->mesh;
+    const pointMesh& pMesh  = pointMesh::New(mesh );
     constexpr bool check_vol = std::is_same<volMesh, GeoMesh>::value || std::is_same<surfaceMesh, GeoMesh>::value;
     if (!Pstream::parRun())
     {
@@ -616,34 +616,34 @@ void read_fields(
             }
         }
         
-        // else if  constexpr(std::is_same<pointMesh, GeoMesh>::value){
-        //     for (int i = 2 + first_snap; i < last_s + first_snap; i++)
-        //     {
-        //         GeometricField<Type, PatchField, GeoMesh> tmp_field(
-        //             IOobject
-        //             (
-        //                 field.name(),
-        //                 casename + runTime2.times()[i].name(),
-        //                 field.mesh(),
-        //                 IOobject::MUST_READ
-        //             ),
-        //             pMesh
-        //         );
+        else if  constexpr(std::is_same<pointMesh, GeoMesh>::value){
+            for (int i = 2 + first_snap; i < last_s + first_snap; i++)
+            {
+                GeometricField<Type, PatchField, GeoMesh> tmp_field(
+                    IOobject
+                    (
+                        field.name(),
+                        casename + runTime2.times()[i].name(),
+                        field.mesh().thisDb(),
+                        IOobject::MUST_READ
+                    ),
+                    pMesh
+                );
 
-        //         // GeometricField<Type, PatchField, GeoMesh> tmp_field(
-        //         //     IOobject
-        //         //     (
-        //         //         Name,
-        //         //         timename + "/" + name(i),
-        //         //         mesh,
-        //         //         IOobject::MUST_READ
-        //         //     ),
-        //         //     pMesh
-        //         // );
-        //         Lfield.append(tmp_field.clone());
-        //         printProgress(double(i + 1) / (last_s + first_snap));
-        //     }
-        // }    
+                // GeometricField<Type, PatchField, GeoMesh> tmp_field(
+                //     IOobject
+                //     (
+                //         Name,
+                //         timename + "/" + name(i),
+                //         mesh,
+                //         IOobject::MUST_READ
+                //     ),
+                //     pMesh
+                // );
+                Lfield.append(tmp_field.clone());
+                printProgress(double(i + 1) / (last_s + first_snap));
+            }
+        }    
 
         std::cout << std::endl;
     }

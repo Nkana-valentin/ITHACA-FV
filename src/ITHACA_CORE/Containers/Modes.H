@@ -254,6 +254,7 @@ typedef Modes<scalar, fvPatchField, volMesh> volScalarModes;
 typedef Modes<vector, fvPatchField, volMesh> volVectorModes;
 typedef Modes<scalar, fvsPatchField, surfaceMesh> surfaceScalarModes;
 typedef Modes<vector, pointPatchField, pointMesh> pointVectorModes;
+//typedef Modes<> pointModes;
 
 #endif
 
