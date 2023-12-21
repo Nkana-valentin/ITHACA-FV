@@ -1,0 +1,107 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1906                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      dynamicMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dynamicFvMesh   dynamicMotionSolverFvMesh;
+
+motionSolverLibs   ("libsixDoFRigidBodyMotion.so");
+
+solver            sixDoFRigidBodyMotion;
+
+
+sixDoFRigidBodyMotionCoeffs
+{
+    report          on;
+
+    solver
+    {
+        type Newmark; // symplectic;//CrankNicolson// Newmark
+    }
+
+    patches         ( cylinder1 );
+    innerDistance   0.3;
+    outerDistance   1;
+
+    rho             rhoInf;
+    rhoInf          1;
+
+    centreOfMass    (0 0 0);
+    mass            0.1; //10.1
+    g               (0 0 -9.81);
+    momentOfInertia (1 1 0.03);
+    transform       (1 0 0 0 1 0 0 0 1) (2.929541 0 0.2);
+    velocity (0.0 0.0 0.0);
+    //accelerationRelaxation 1.0;
+    accelerationRelaxation 0.4;
+    accelerationDamping 1.0;
+    origin    (0.0 0.0 0.0);
+    CofR      (0.0 0.0 0.0);
+    constraints
+    {
+       
+        fixedLine
+        {
+            sixDoFRigidBodyMotionConstraint line;
+            direction           (0 1 0); //(1 0 0)
+        }
+        // eliminates any rotational motion
+        noRotate
+        {
+            sixDoFRigidBodyMotionConstraint orientation;
+            centreOfRotation           (0 0 0);
+        }
+
+	/*yPlan
+	{
+	sixDoFRigidBodyMotionConstraint   plane;
+	normal ( 0 0 1);
+	}
+
+
+	yAxis
+	{
+	sixDoFRigidBodyMotionConstraint orientation;
+	centreOfRotation                (0 1 0);
+	}*/
+    }
+
+    restraints
+    {
+        verticalSpring1
+        {
+            sixDoFRigidBodyMotionRestraint linearSpring;
+            body cylinder1;
+            anchor          (0 -1 0);
+            refAttachmentPt (0 0 0);
+            stiffness       0.04 ;//0.004// 0.15791367
+            damping         0.002;
+            restLength      1;
+        }
+        /*verticalSpring2
+        {
+            sixDoFRigidBodyMotionRestraint linearSpring;
+            body cylinder1;
+            anchor          (0 1 0);
+            refAttachmentPt (0 0 0);
+            stiffness       0.004;
+            damping         0.04;
+            restLength      1;//1
+        }*/
+    }
+
+}
+
+
+// ************************************************************************* //

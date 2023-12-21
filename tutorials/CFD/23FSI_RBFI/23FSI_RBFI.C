@@ -39,11 +39,12 @@ SourceFiles
 #include "pointConstraints.H"
 #include "zoneMotion.H"
 
+
 class tutorial22: public fsiBasic
 {
 public:
     explicit tutorial22(int argc, char* argv[])
-        : fsiBasic(argc, argv), U(_U()), p(_p()), phi(_phi()), pd(_pd())
+        : fsiBasic(argc, argv), U(_U()), p(_p()), phi(_phi()), pd(_pointDisplacement())
     {
         //point0 = meshPtr().points();
         //restart();
@@ -61,34 +62,31 @@ public:
         //vectorField point0;
     void offlineSolve()
     {
-        Vector<double> inl(1, 0, 0);
+        //Vector<double> inl(1, 0, 0);
         List<scalar> mu_now(1);
 
-        // if (offline)
-        // {
-        //     ITHACAstream::read_fields(Ufield, U, "./ITHACAoutput/Offline/");
-        //     ITHACAstream::read_fields(Pfield, p, "./ITHACAoutput/Offline/");
-        //      // mu_samples =
-        //      //    ITHACAstream::readMatrix("./ITHACAoutput/Offline/mu_samples_mat.txt");
-        // }
-        // else
-        //{
-        //for (label i = 0; i < mu.cols(); i++)
-        //{
-        //inl[0] = mu(0, i);
-        mu_now[0] = mu(0, 0); //mu.cols()=50
-        //mu_now[0] = mu(0, i);
-        //std::cout << "////////////////////////////mu is :///////////////////"<< mu.cols() <<  std::endl;
-        //std::cout << "////////////////////////////mu_now[0] is :///////////////////"<< mu_now[0] <<  std::endl;
+        if (offline)
+        {
+            ITHACAstream::read_fields(Ufield, U, "./ITHACAoutput/Offline/");
+            ITHACAstream::read_fields(Pfield, p, "./ITHACAoutput/Offline/");
+            ITHACAstream::read_fields(Dfield, pd, "./ITHACAoutput/Offline/");
+             // mu_samples =
+             //    ITHACAstream::readMatrix("./ITHACAoutput/Offline/mu_samples_mat.txt");
+        }
+        else
+        {
+            //for (label i = 0; i < mu.cols(); i++)
+            //{
+            //inl[0] = mu(0, i);
+            mu_now[0] = mu(0, 0); //mu.cols()=50
+            //mu_now[0] = mu(0, i);
+            //assignBC(U, BCind, inl);
+            //assignIF(U, inl);
+            //change_viscosity(mu(0, i));
+            truthSolve(mu_now);
+            //restart();
 
-        //assignBC(U, BCind, inl);
-        //assignIF(U, inl);
-        //change_viscosity(mu(0, i));
-
-        truthSolve(mu_now);
-        //restart();
-
-        //}
+        }
         //}
     }
 };
@@ -165,20 +163,9 @@ public:
     {
         
     
-        for (int i = 0; i < NmodesUproj; i++)
-        {
-            Umodes.append((problem->Umodes.toPtrList()[i]).clone());
-        }
-
-        for (int i = 0; i < NmodesPproj; i++)
-        {
-            Pmodes.append((problem->Pmodes.toPtrList()[i]).clone());
-        }
+        
         Eigen::VectorXd uresidual = Eigen::VectorXd::Zero(NmodesUproj);
         Eigen::VectorXd presidual = Eigen::VectorXd::Zero(NmodesPproj);
-        //std::cout <<  presidual.cwiseAbs() << std::endl;
-        scalar U_norm_res(1);
-        scalar P_norm_res(1);
 
         Eigen::MatrixXd a = Eigen::VectorXd::Zero(NmodesUproj);
         Eigen::MatrixXd a0 = Eigen::VectorXd::Zero(NmodesUproj);
@@ -194,22 +181,23 @@ public:
         pimpleControl& pimple = problem->_pimple();
         volScalarField& p = problem->_p();
         volVectorField& U = problem->_U();
-        //pointVectorField& pointDisplacement = problem->_pd();//????
-        pointVectorField& pointDisplacement = const_cast<pointVectorField&>
-                                          (mesh.lookupObject<pointVectorField>("pointDisplacement"));
-        //surfaceVectorField& Uf = problem->_Uf();
+        pointVectorField& pointDisplacement = problem->_pointDisplacement();//????
+        // pointVectorField& pointDisplacement = const_cast<pointVectorField&>
+        //                                   (mesh.lookupObject<pointVectorField>("pointDisplacement"));
         IOMRFZoneList& MRF = problem->_MRF();
         singlePhaseTransportModel& laminarTransport = problem->_laminarTransport();
         autoPtr<incompressible::turbulenceModel> turbulence = problem->turbulence;
         instantList Times = runTime.times();
         runTime.setEndTime(finalTime);
         // Declare modal coefficients for velocity and pressure
-        a = ITHACAutilities::getCoeffs(U, Umodes, NmodesUproj, true);
-        b = ITHACAutilities::getCoeffs(p, Pmodes, NmodesPproj, true);
-        c = ITHACAutilities::getCoeffs(pointDisplacement, Dmodes, NmodesDproj, false);
+        // a = ITHACAutilities::getCoeffs(U, Umodes, NmodesUproj, true);
+        // b = ITHACAutilities::getCoeffs(p, Pmodes, NmodesPproj, true);
+        // c = ITHACAutilities::getCoeffs(pointDisplacement, Dmodes, NmodesDproj, false);
         // To solve the rbfi system to obtain the weights
         //PodIpointDispl(problem->coeffL2, problem->CylDispl, NmodesDproj);
-        problem->PodIpointDispl(problem->CylDispl, NmodesDproj);
+// PodIpointDispl(problem->coeffL2,  problem->CylDispl,  NmodesDproj);
+PodIpointDispl(problem->coeffL2,  problem->CylDispl, problem->CylRot,   NmodesDproj);
+
     
         runTime.setTime(Times[1], 1);
         runTime.setDeltaT(timeStep);
@@ -228,24 +216,24 @@ public:
         turbulence->validate();
         //Umodes.reconstruct(U, a, "U");
         //Pmodes.reconstruct(p, b, "p");
-        problem->Dmodes.reconstruct(pointDisplacement, c, "pointDisplacement");
-        pointDisplacement.primitiveFieldRef() = pointDisplacement;
-        ITHACAstream::exportSolution(pointDisplacement, name(counter), folder);
-        ITHACAstream::exportSolution(U, name(counter), folder);
-        ITHACAstream::exportSolution(p, name(counter), folder);
-        ITHACAstream::writePoints(mesh.points(), folder, name(counter) + "/polyMesh/");
-        std::ofstream of(folder + name(counter) + "/" + runTime.timeName());
-        UredFields.append(U.clone());
-        PredFields.append(p.clone());
-        counter++;
-        nextWrite += writeEvery;
+       // problem->Dmodes.reconstruct(pointDisplacement, c, "pointDisplacement");
+        // pointDisplacement.primitiveFieldRef() = pointDisplacement;
+        // ITHACAstream::exportSolution(pointDisplacement, name(counter), folder);
+        // ITHACAstream::exportSolution(U, name(counter), folder);
+        // ITHACAstream::exportSolution(p, name(counter), folder);
+        // ITHACAstream::writePoints(mesh.points(), folder, name(counter) + "/polyMesh/");
+        // std::ofstream of(folder + name(counter) + "/" + runTime.timeName());
+        // UredFields.append(U.clone());
+        // PredFields.append(p.clone());
+        //counter++;
+        //nextWrite += writeEvery;
         dictionary dictCoeffs(problem->dyndict->findDict("sixDoFRigidBodyMotionCoeffs"));
         Foam::functionObjects::forces romforces("romforces", mesh, dictCoeffs);
         sixDoFRigidBodyMotion sDRBM(dictCoeffs, dictCoeffs, runTime );
         Foam::dimensionedVector g("g", dimAcceleration, Zero);
         dictCoeffs.readIfPresent("g", g);
-        Eigen::MatrixXd pdCoeff;
-        pdCoeff.resize(NmodesDproj, 1);
+        Eigen::VectorXd pdCoeff;
+        pdCoeff.resize(NmodesDproj);
         bool firstIter = false;
         pointField points0 = mesh.points();
         // PIMPLE algorithm starts here
@@ -282,34 +270,47 @@ public:
                          runTime.deltaT0Value()
                     );
 
-                    //std::cout << "/////////////" <<  sDRBM.centreOfMass().y() << "////////////" << std::endl;
+                    std::cout << "/////////////" << runTime.deltaTValue() << "////////////" << std::endl;
                     for (int i = 0; i < NmodesDproj; i++)
                     {
                         Eigen::MatrixXd muEval;
+                        std::vector<double> s(2);
+                        s[0] = sDRBM.centreOfMass().y();
+                        //s[1] = sDRBM.v().y();
+                        s[1] = sDRBM.omega().z() / runTime.deltaTValue();
+std::cout << "####################################################" << std::endl;
+                        std::cout << s[1] << std::endl;
+                        std::cout << "####################################################" << std::endl;
+
                         muEval.resize(1, 1);
-                        // mu_now = sDRBM.centreOfMass().y();
-                        muEval(0, 0)  = sDRBM.centreOfMass().y();
-                        pdCoeff(i, 0) = problem->rbfSplines[i]->eval(muEval);
+                        muEval(0, 0) = sDRBM.centreOfMass().y();
+                        //muEval(0, 0)  = sDRBM.omega().z() / runTime.deltaT().value();//sDRBM.centreOfMass().y();
+                        pdCoeff(i) = problem->rbfSplines[i]->eval(s);
                     }
-                    pointConstraints::New(pointDisplacement.mesh()).constrainDisplacement(pointDisplacement);
+                    
                     // Reconstruction of the pointdisplacement
-                    problem->Dmodes.reconstruct(pointDisplacement, pdCoeff, "pointDisplacement");
+                    Dmodes.reconstruct(pointDisplacement, pdCoeff, "pointDisplacement");
+                    // problem->sDRBMS().pointDisplacement().primitiveFieldRef() = pointDisplacement.primitiveFieldRef();
+                    problem->sDRBMS().pointDisplacement().primitiveFieldRef() = pointDisplacement.mesh()().points() -points0;
+
+
+
+                    pointConstraints::New
+                    (
+                        problem->sDRBMS().pointDisplacement().mesh()
+                    ).constrainDisplacement(problem->sDRBMS().pointDisplacement());
                     // Update the displacements
                     //pointDisplacement.primitiveFieldRef() = points0 + pointDisplacement.primitiveField();
-                    //pointDisplacement.correctBoundaryConditions();
+                    //problem->sDRBMS().pointDisplacement().correctBoundaryConditions();
                     // Displacement has changed. Update boundary conditions
                     //pointConstraints::New(pointDisplacement.mesh()).constrainDisplacement(pointDisplacement);
                     // tmp<pointField> newPoints(mesh.points() + pointDisplacement.primitiveField());
-                    tmp<pointField> newPoints(points0 + pointDisplacement.primitiveField());
+                   // tmp<pointField> newPoints(points0 + pointDisplacement.primitiveField());
                     //pointConstraints::New(pointDisplacement.mesh()).constrainDisplacement(pointDisplacement);
                     // tmp<pointField> ttransformedPts(new pointField(mesh.points()));
                     // pointField& transformedPts = ttransformedPts.ref();
-          
-                    // UIndirectList<point>(transformedPts, zm.pointIDs()) =
-                    // pointField(newPoints.ref(), zm.pointIDs());
-  
-                    mesh.movePoints(newPoints);
-                    //mesh.movePoints(mesh.points());
+                    //mesh.movePoints(newPoints);
+                    mesh.movePoints(problem->sDRBMS().curPoints());
 
                     if (mesh.changing())
                     {
@@ -490,7 +491,7 @@ public:
         }
     }
 
-    void PodIpointDispl(Eigen::MatrixXd  coeffL2, Eigen::MatrixXd muu,  label NPdModes)
+    void PodIpointDispl(Eigen::MatrixXd  coeffL2, Eigen::MatrixXd muu1,  Eigen::MatrixXd muu2,  label NPdModes)
     {
         if (NPdModes == 0)
         {
@@ -499,10 +500,12 @@ public:
         
         //coeffL2 = ITHACAutilities::getCoeffs(Dfield, Dmodes, NPdModes, false);
 
-        //std::cout << "////////////////////////////////// :" << coeffL2 << std::endl;
         problem->samples.resize(NPdModes);
         problem->rbfSplines.resize(NPdModes);
         Eigen::MatrixXd weights;
+        std::vector<double> x(2);
+        // Eigen::VectorXd x;
+        // x.resize(1, 2);
       
 
         for (label i = 0; i < NPdModes; i++) // i is the nnumber of th mode
@@ -513,15 +516,22 @@ public:
             {
                 problem->samples[i] = new SPLINTER::DataTable(1, 1);
       //std::cout << "////////////////////////////////// :" << coeffL2.cols() << std::endl;
-                for (label j = 0; j < coeffL2.cols();
-                        j++) // j is the number of the nut snapshot
+                for (label j = 0; j < coeffL2.cols(); j++) // j is the number of the nut snapshot
                 {
-                    problem->samples[i]->addSample(muu.row(j), coeffL2(i, j));
+                     x[0] = muu1(j);
+                     x[1] = muu2(j);
+                    // std::cout << "//////////////////////////////////////////" << std::endl;
+                    // std::cout << x << std::endl;
+                    // std::cout << "//////////////////////////////////////////" << std::endl;
+                    //problem->samples[i]->addSample(muu2.row(j), coeffL2(i, j));
+                    problem->samples[i]->addSample(x, coeffL2(i, j));
+
+
                 }
 
                 ITHACAstream::ReadDenseMatrix(weights, "./ITHACAoutput/weights/", weightName);
                 problem->rbfSplines[i] = new SPLINTER::RBFSpline(*problem->samples[i],
-                                                        SPLINTER::RadialBasisFunctionType::GAUSSIAN, weights);
+                                                        SPLINTER::RadialBasisFunctionType::THIN_PLATE_SPLINE, weights);
                 std::cout << "Constructing RadialBasisFunction for mode " << i + 1 << std::endl;
             } 
            
@@ -533,11 +543,21 @@ public:
                 for (label j = 0; j < coeffL2.cols();j++) // j is the number of the nut snapshot
                 {
                     //std::cout << "///////////////////// :" << muu.row(j) << "///////////////////// :" << coeffL2(i, j) << std::endl;
-                    problem->samples[i]->addSample(muu.row(j), coeffL2(i, j));
+                    //problem->samples[i]->addSample(muu.row(j), coeffL2(i, j));
+                    x[0] = muu1(j);
+                    x[1] = muu2(j);
+                    problem->samples[i]->addSample(x, coeffL2(i, j));
+                    //problem->samples[i]->addSample(muu2.row(j), coeffL2(i, j));
+
+                    // std::cout << "//////////////////////////////////////////" << std::endl;
+
+                    // std::cout << x << std::endl;
+                    // std::cout << "//////////////////////////////////////////" << std::endl;
+                    //problem->samples[i]->addSample(muu(j), coeffL2(i, j));
                 }
                 
                 problem->rbfSplines[i] = new SPLINTER::RBFSpline(*problem->samples[i],
-                                                        SPLINTER::RadialBasisFunctionType::MULTIQUADRIC);
+                                                        SPLINTER::RadialBasisFunctionType::THIN_PLATE_SPLINE);
                 ITHACAstream::SaveDenseMatrix(problem->rbfSplines[i]->weights,
                                               "./ITHACAoutput/weights/", weightName);
             
@@ -561,13 +581,13 @@ int main(int argc, char* argv[])
     // Read some parameters from file
     ITHACAparameters* para = ITHACAparameters::getInstance(example.meshPtr(),example._runTime());
 
-    int NmodesUout = para->ITHACAdict->lookupOrDefault<int>("NmodesUout", 50);
-    int NmodesPout = para->ITHACAdict->lookupOrDefault<int>("NmodesPout", 50);
-    int NmodesDout = para->ITHACAdict->lookupOrDefault<int>("NmodesDout", 10);
+    int NmodesUout = para->ITHACAdict->lookupOrDefault<int>("NmodesUout", 20);
+    int NmodesPout = para->ITHACAdict->lookupOrDefault<int>("NmodesPout", 20);
+    int NmodesDout = para->ITHACAdict->lookupOrDefault<int>("NmodesDout", 5);
 
-    int NmodesUproj = para->ITHACAdict->lookupOrDefault<int>("NmodesUproj", 25);
-    int NmodesPproj = para->ITHACAdict->lookupOrDefault<int>("NmodesPproj", 25);
-    int NmodesDproj = para->ITHACAdict->lookupOrDefault<int>("NmodesDproj", 5);
+    int NmodesUproj = para->ITHACAdict->lookupOrDefault<int>("NmodesUproj", 15);
+    int NmodesPproj = para->ITHACAdict->lookupOrDefault<int>("NmodesPproj", 15);
+    int NmodesDproj = para->ITHACAdict->lookupOrDefault<int>("NmodesDproj", 2);
 
 
 
@@ -589,8 +609,8 @@ int main(int argc, char* argv[])
     example.inletIndex(0, 1) = 0;
     // Time parameters: We can use Ioodictionnary to access time parameters
     example.startTime = 0;
-    example.finalTime = 10;
-    example.timeStep = 0.01; //0.01;
+    example.finalTime = 2;
+    example.timeStep = 0.0001; //0.01;
     example.writeEvery = 0.1;
 
     // //Perform the offline solve
@@ -609,37 +629,71 @@ int main(int argc, char* argv[])
     //                         example.podex, 0, 0, NmodesUout);
 
     //Perform POD on velocity pressure store the first 20 modes
-
-    ITHACAPOD::getModes(example.Ufield, example.Umodes, online._U().name(),
+    if( (!ITHACAutilities::check_folder("./ITHACAoutput/POD/1")) )
+    {
+           ITHACAPOD::getModes(example.Ufield, online.Umodes, online._U().name(),
                         example.podex, 0, 0, NmodesUout);
 
 
-    ITHACAPOD::getModes(example.Pfield, example.Pmodes, example._p().name(),
-                        example.podex, 0, 0,NmodesPout);
-  
-   ITHACAPOD::getModes(example.Dfield, example.Dmodes, online._pd().name(),
-                        example.podex, 0, 0, NmodesDout);
-   Eigen::MatrixXd FomCentersOfMassy = Foam2Eigen::field2Eigen(example.centerofmassy);
+            ITHACAPOD::getModes(example.Pfield, online.Pmodes, example._p().name(),
+                                example.podex, 0, 0,NmodesPout);
+          
+           ITHACAPOD::getModes(example.Dfield, online.Dmodes, online._pointDisplacement().name(),
+                                example.podex, 0, 0, NmodesDout);
+    }
+    
+   if( (!ITHACAutilities::check_folder("./ITHACAoutput/DataFromFoam/")) )
+   {
+           Eigen::MatrixXd FomCentersOfMassy = Foam2Eigen::field2Eigen(example.centerofmassy);
+           cnpy::save(FomCentersOfMassy, "FomCentersOfMassy.npy");
+
+           Eigen::MatrixXd alfa = Foam2Eigen::field2Eigen(example.omegaz);
+           cnpy::save(alfa, "alfa.npy");
+           //online.coeffL2 = ITHACAutilities::getCoeffs(example.Dfield, online.Dmodes, NmodesDproj, false);
+           //ITHACAstream::exportMatrix(online.coeffL2 , "coeffpd", "python","./ITHACAoutput/Matrices/");
+           //online.PodIpointDispl(online.coeffL2, FomCentersOfMassy, NmodesDproj);
+            Eigen::VectorXd FomVely = Foam2Eigen::field2Eigen(example.vely);
+            /// exporting matrices
+            ITHACAstream::exportMatrix(FomVely, "FomVely", "python","./ITHACAoutput/DataFromFoam/");
+            //ITHACAstream::exportMatrix(FomCentersOfMassy, "FomCentersOfMassy", "python","./ITHACAoutput/CenterOfMass/");
+            //Eigen::MatrixXd FomCentersOfMassy = Foam2Eigen::field2Eigen(example.centerofmassy);
+   }
+
+   if (std::ifstream("FomCentersOfMassy.npy"))
+   {
+        Info << "Reading parameters of test from file" << endl;
+        cnpy::load(online.CylDispl, "FomCentersOfMassy.npy");
+   }
+   if (std::ifstream("alfa.npy"))
+   {
+        Info << "Reading parameters of test from file" << endl;
+        cnpy::load(online.CylRot, "alfa.npy");
+   }
+   
+   //std::cout << alfa << std::endl;
+    std::cout << "=======================================================" << "\n";
+
+   //std::cout << FomCentersOfMassy << std::endl;
+    //online.CylDispl = FomCentersOfMassy;
+    //online.CylRot = alfa; // this is the angle of attack
+
    //online.coeffL2 = ITHACAutilities::getCoeffs(example.Dfield, online.Dmodes, NmodesDproj, false);
-   example.coeffL2 = ITHACAutilities::getCoeffs(example.Dfield, example.Dmodes, NmodesDproj, false);
+   online.coeffL2 = ITHACAutilities::getCoeffs(example.Dfield, online.Dmodes, NmodesDproj, false);
    ITHACAstream::exportMatrix(online.coeffL2 , "coeffpd", "python","./ITHACAoutput/Matrices/");
    //online.PodIpointDispl(online.coeffL2, FomCentersOfMassy, NmodesDproj);
-    Eigen::VectorXd FomVely = Foam2Eigen::field2Eigen(example.vely);
     //Eigen::VectorXd FomCentersOfMassy = Foam2Eigen::field2Eigen(example.centerofmassy);
-    //online.CylDispl = FomCentersOfMassy;
-    example.CylDispl = FomCentersOfMassy;
+    //online.CylDispl = FomVely;
     //online.coeffL2 = 
     //reduced.reconstructLiftAndDrag(CoeffU, Coeffp, "./ITHACAoutput/forces");
     /// exporting matrices
-    ITHACAstream::exportMatrix(FomVely, "FomVely", "python","./ITHACAoutput/VelOfDispl/");
-    ITHACAstream::exportMatrix(FomCentersOfMassy, "FomCentersOfMassy", "python","./ITHACAoutput/CenterOfMass/");
+    // ITHACAstream::exportMatrix(FomVely, "FomVely", "python","./ITHACAoutput/VelOfDispl/");
+    // ITHACAstream::exportMatrix(FomCentersOfMassy, "FomCentersOfMassy", "python","./ITHACAoutput/CenterOfMass/");
     // // ############### contruct the reduced the class object ###################
     //reducedBasicFsi reduced(online);
-    reducedBasicFsi reduced(example);
+    reducedBasicFsi reduced(online);
     //example.restart();
     // Reads inlet volocities boundary conditions.
-    word vel_file(para->ITHACAdict->lookup("online_velocities"));
-    Eigen::MatrixXd vel = ITHACAstream::readMatrix(vel_file);
+    //Eigen::MatrixXd vel = ITHACAstream::readMatrix(vel_file);
 
     reduced.startTime = example.startTime;
     reduced.finalTime = example.finalTime;
@@ -679,7 +733,7 @@ int main(int argc, char* argv[])
     std::cout << "======================= errL2P completed================================" << "\n";
 
     Eigen::MatrixXd relErrorPdispl(example.Dfield.size(), 1);
-    dimensionedVector pd("pd",dimLength,  vector(0, 1, 0));
+    //dimensionedVector pd("pd",dimLength,  vector(0, 1, 0));
     //dimensionedVector pd("pd",example._pd().dimensions(),  Zero);
 
     // for (label k = 0; k < example.Dfield.size(); k++)
@@ -694,12 +748,12 @@ int main(int argc, char* argv[])
     ITHACAstream::exportMatrix(errL2U, "errL2U", "python","./ITHACAoutput/ErrorsL2/");
     ITHACAstream::exportMatrix(errL2P, "errL2P", "python","./ITHACAoutput/ErrorsL2/");
 
-    std::cout << "======================= errorFrobRel ================================" << "\n";
-    Eigen::MatrixXd errFrobU = ITHACAutilities::errorFrobRel(example.Ufield, reduced.UredFields);
-    std::cout << "======================= errFobU completed================================" << "\n";
-    ITHACAstream::exportMatrix(errFrobU, "errFrobU", "python","./ITHACAoutput/ErrorsFrob/");
-    Eigen::MatrixXd errFrobP = ITHACAutilities::errorFrobRel(example.Pfield, reduced.PredFields);
-    std::cout << "======================= errFobP completed================================" << "\n";
+    // std::cout << "======================= errorFrobRel ================================" << "\n";
+    // Eigen::MatrixXd errFrobU = ITHACAutilities::errorFrobRel(example.Ufield, reduced.UredFields);
+    // std::cout << "======================= errFobU completed================================" << "\n";
+    // ITHACAstream::exportMatrix(errFrobU, "errFrobU", "python","./ITHACAoutput/ErrorsFrob/");
+    // Eigen::MatrixXd errFrobP = ITHACAutilities::errorFrobRel(example.Pfield, reduced.PredFields);
+    // std::cout << "======================= errFobP completed================================" << "\n";
 
     exit(0);
 }

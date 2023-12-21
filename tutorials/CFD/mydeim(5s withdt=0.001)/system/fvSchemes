@@ -1,0 +1,129 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  3.0.x                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+|*---------------------------------------------------------------------------*|
+|  File created by CFD support s.r.o., Wed Jan 25 11:27:58 2017               |
+|                    http://www.cdfsupport.com                                |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     3.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSchemes;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+/*
+ddtSchemes
+{
+    default         Euler;// backward
+}
+
+gradSchemes
+{
+    default         cellMDLimited Gauss linear 1;
+    grad(U)         cellLimited Gauss linear 1;
+}
+
+divSchemes
+{
+    default         Gauss linear;
+    //default          none;
+    //div(phi,U)      Gauss linearUpwindV grad(U);
+     div(phi,U)      Gauss upwind;
+    //div((nuEff*dev(T(grad(U))))) Gauss linear;
+
+
+}
+
+laplacianSchemes
+{
+    default        Gauss linear limited 0.5;
+}
+
+interpolationSchemes
+{
+    default         linear;
+}
+
+snGradSchemes
+{
+    default         limited 0.5;
+}
+
+fluxRequired
+{
+    default         no;
+    p;
+    Phi;
+}
+
+*/
+
+
+ddtSchemes
+{
+    default         Euler;// backward
+}
+
+gradSchemes
+{
+    default         cellMDLimited Gauss linear 1;
+    grad(U)         cellLimited Gauss linear 1;
+    //default none;
+    //grad(p) Gauss leastSquares;
+    //grad(U) Gauss linear;
+    //grad(k) Gauss linear;
+    //grad(omega) Gauss linear;
+}
+
+divSchemes
+{
+    default none;
+    //div(phi,U) Gauss linearUpwindV grad(U);
+    div(phi,U)   Gauss linearUpwindV phi;
+    div(phi,k) Gauss upwind;
+    div(phi,omega) Gauss upwind;
+    div((nuEff*dev(T(grad(U))))) Gauss linear; 
+    div((nuEff*dev2(T(grad(U))))) Gauss linear;
+}
+
+laplacianSchemes
+{
+    default        Gauss linear limited 0.5;
+    //default               none;
+    //default Gauss linear orthogonal;
+    //laplacian((1|A(U)),p) Gauss linear corrected;
+    //laplacian(nuEff,U)    Gauss linear corrected;
+    
+    //laplacian(DT,subsetT) Gauss linear;
+}
+
+interpolationSchemes
+{
+    default         linear;
+}
+
+snGradSchemes
+{
+    default         limited 0.5;
+    //default corrected;
+    //default orthogonal;
+}
+
+fluxRequired
+{
+    default         no;
+    p;
+    Phi;
+}
+
+
+
+// ************************************************************************* //
+
+// ************************************************************************* //

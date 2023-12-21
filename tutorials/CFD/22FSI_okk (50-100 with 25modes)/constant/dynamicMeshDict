@@ -1,0 +1,156 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1906                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      dynamicMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dynamicFvMesh   dynamicMotionSolverFvMesh;
+
+motionSolverLibs   ("libsixDoFRigidBodyMotion.so");
+
+solver            sixDoFRigidBodyMotion;
+
+
+sixDoFRigidBodyMotionCoeffs
+{
+    report          on;
+
+    solver
+    {
+        type  symplectic; //Newmark; // symplectic; //CrankNicolson
+    }
+
+    patches         (cylinder1);
+    innerDistance   0.3;
+    outerDistance   3;
+    
+    rho             rhoInf;
+    //rhoInf          1;
+    rhoInf            1;
+
+    centreOfMass    (0 0 0);
+    mass            0.1;
+    momentOfInertia (1 1 0.03);
+    transform       (1 0 0 0 1 0 0 0 1) (2.929541 0 0.2);
+    origin          (0.0 0.0 0.0);
+    CofR        (0 0 0); 
+    accelerationRelaxation 1.0;
+    accelerationDamping 1.0;
+    velocity        (0.0 0.0 0.0 );
+
+    constraints
+    {
+        /*yPlan
+        {
+            sixDoFRigidBodyMotionConstraint plane;
+            normal            (0 1 0);
+        }
+        yAxis
+        {
+            sixDoFRigidBodyMotionConstraint orientation;
+            centreOfRotation            (0 1 0);
+        }*/
+        
+	// only let cylinder move in y−direction
+	/*fixedLine
+	{
+		sixDoFRigidBodyMotionConstraint axis ;
+		//normal (0 1 0);
+		//direction (0 1 0 ) ;
+		//centreOfRotation    (0 0 0);
+		axis          (0 1 0);
+	}
+	// eliminates any rotational motion
+	noRotate1
+        {
+            sixDoFRigidBodyMotionConstraint orientation;
+            orientation            (0 0 0);
+        }*/
+        
+        fixedLine
+	{
+		sixDoFRigidBodyMotionConstraint line ;
+		//normal (0 1 0);
+		//direction (0 1 0 ) ;
+		//centreOfRotation    (0 0 0);
+		direction           (0 1 0);
+	}
+	// eliminates any rotational motion
+	noRotate1
+        {
+            sixDoFRigidBodyMotionConstraint orientation;
+            centreOfRotation            (0 0 0);
+        }
+        
+        
+    }
+
+    restraints
+    {
+       /*spring
+       {
+		sixDoFRigidBodyMotionRestraint linearSpring;
+		body cylinder1;
+		anchor          (0.0 1 0.0);
+		refAttachmentPt (0.0 0 0.0);
+		stiffness       102.97;
+		damping         0.00;
+		restLength      1;
+       }   */
+       verticalSpring1
+       {
+           sixDoFRigidBodyMotionRestraint linearSpring;
+           body cylinder1;
+            anchor          (0 -1 0);
+            refAttachmentPt (0 0 0);
+            stiffness       0.135114884;//40
+            damping         0.4; //0.4
+            restLength      1;//1
+        }
+        /*horizontalSpring1
+        {
+            sixDoFRigidBodyMotionRestraint linearSpring;
+            body cylinder1;
+            anchor          (0 1 0);
+            refAttachmentPt (0 0 0);
+            stiffness       0.004;
+            damping         0.002;// 3
+            restLength      1;//1
+        }*/
+        
+       /*verticalSpring2
+       {
+	   sixDoFRigidBodyMotionRestraint linearSpring;
+	   body cylinder1;
+            anchor          (1 0 0);
+            refAttachmentPt (0 0 0);
+            stiffness       2;//3
+            damping         0.02;
+            restLength      1;//1
+        }
+        horizontalSpring2
+        {
+            sixDoFRigidBodyMotionRestraint linearSpring;
+            body cylinder1;
+            anchor          (0 -1 0);
+            refAttachmentPt (0  0 0);
+            stiffness       2;
+            damping         0.02;// 3
+            restLength      1;//1
+        }*/
+    }
+
+}
+
+
+// ************************************************************************* //

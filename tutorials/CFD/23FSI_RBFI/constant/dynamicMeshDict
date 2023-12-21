@@ -1,8 +1,8 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  v1906                                 |
-|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|  \\    /   O peration     | Version:  v2112                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -16,22 +16,19 @@ FoamFile
 
 dynamicFvMesh   dynamicMotionSolverFvMesh;
 
-motionSolverLibs   ("libsixDoFRigidBodyMotion.so");
+motionSolverLibs (sixDoFRigidBodyMotion);
 
-solver            sixDoFRigidBodyMotion;
+motionSolver    sixDoFRigidBodyMotion;
 
+// Not necessarily useful here, but can have different motion updates types
+updateControl   timeStep;
+updateInterval  1;
 
 sixDoFRigidBodyMotionCoeffs
 {
-    report          on;
-
-    solver
-    {
-        type symplectic; // symplectic;//CrankNicolson// Newmark
-    }
-
-    patches         ( cylinder1 );
-    innerDistance   0.3;
+	patches         ( cylinder1 );
+   
+   innerDistance   0.3;
     outerDistance   3;
 
     rho             rhoInf;
@@ -39,82 +36,71 @@ sixDoFRigidBodyMotionCoeffs
 
     centreOfMass    (0 0 0);
     mass            0.1; //10.1
-    g               (0 0 -9.81);
+    g               (0  -9.81 0);
+    angularMomentum (0 0 -2);
     momentOfInertia (1 1 0.03);
-    transform       (1 0 0 0 1 0 0 0 1) (2.929541 0 0.2);
+    //transform       (1 0 0 0 1 0 0 0 1) (2.929541 0 0.2);
+    orientation
+    (
+	    0.9953705935 0.09611129781 0
+	    -0.09611129781 0.9953705935 0
+	    0 0 1
+    );
     velocity (0.0 0.0 0.0);
     accelerationRelaxation 1.0;
     accelerationDamping 1.0;
     origin    (0.0 0.0 0.0);
     CofR      (0.0 0.0 0.0);
-    constraints
-    {
-        // noRotate1
-        // {
-        //     sixDoFRigidBodyMotionConstraint axis;
-        //     axis            (0 0 1);
-        // }
-        // noRotate2
-        // {
-        //     sixDoFRigidBodyMotionConstraint axis;
-        //     axis            (1 0 0);
-        // }
-        // noRotate3
-        // {
-        //     sixDoFRigidBodyMotionConstraint axis;
-        //     axis            (0 1 0);
-        // }
-        fixedLine
-        {
-            sixDoFRigidBodyMotionConstraint line;
-            direction           (0 1 0); //(1 0 0)
-        }
-        // eliminates any rotational motion
-        noRotate
-        {
-            sixDoFRigidBodyMotionConstraint orientation;
-            centreOfRotation           (0 0 0);
-        }
+	report          on;
 
-	/*yPlan
+	solver
 	{
-	sixDoFRigidBodyMotionConstraint   plane;
-	normal ( 0 0 1);
+	    type symplectic;
+	    //type CrankNicolson;
+	    	    //type Newmark;
 	}
 
-
-	yAxis
+	constraints
 	{
-	sixDoFRigidBodyMotionConstraint orientation;
-	centreOfRotation                (0 1 0);
-	}*/
-    }
+	    yLine
+	    {
+		sixDoFRigidBodyMotionConstraint line;
+		centreOfRotation    (0.0 0.0 0.0);
+		direction           (0 1 0);
+	    }
 
-    restraints
-    {
-        verticalSpring1
-        {
-            sixDoFRigidBodyMotionRestraint linearSpring;
-            body cylinder1;
-            anchor          (0 -1 0);
-            refAttachmentPt (0 0 0);
-            stiffness       0.004 ;//0.004// 0.15791367
-            damping         0.04;
-            restLength      1;
-        }
-        verticalSpring2
-        {
-            sixDoFRigidBodyMotionRestraint linearSpring;
-            body cylinder1;
-            anchor          (0 1 0);
-            refAttachmentPt (0 0 0);
-            stiffness       0.004;
-            damping         0.04;
-            restLength      1;//1
-        }
-    }
+	    zAxis
+	    {
+		sixDoFRigidBodyMotionConstraint axis;
+		axis                (0 0 1);
+	    }
+	}
 
-}
+	restraints
+	{
+	    verticalSpring1
+		  {
+		    sixDoFRigidBodyMotionRestraint linearSpring;
+		    body cylinder1;
+		    anchor          (0 -1 0);  //(0 -1 0)
+		    refAttachmentPt (0 -1 0);
+		    stiffness       0.004 ;//0.004// 0.15791367
+		    damping         2;
+		    restLength      0;
+		 }
+		
+	   /*axialSpring
+	    {
+		sixDoFRigidBodyMotionRestraint linearAxialAngularSpring;
+
+		axis            (0 0 1);
+		stiffness       1;
+		damping         0.5;
+		referenceOrientation $orientation;
+	    }*/
+         }
+   
+ }  
 
 
 // ************************************************************************* //
