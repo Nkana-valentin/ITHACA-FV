@@ -48,13 +48,12 @@ fsiBasic::fsiBasic(int argc, char* argv[])
 
         argList& args = _args();
 
-        #include "createTime.H"
+#include "createTime.H"
         //#include "createDynamicFvMesh.H"
         Info << "Create a dynamic mesh for time = "
              << runTime.timeName() << nl << endl;
 
         meshPtr = autoPtr<dynamicFvMesh> (dynamicFvMesh::New(args, runTime));
-
         dynamicFvMesh& mesh = meshPtr();
         _pimple = autoPtr<pimpleControl>
                    (
@@ -63,7 +62,6 @@ fsiBasic::fsiBasic(int argc, char* argv[])
                            mesh
                        )
                    );
-        //turbulence->validate();
 
         ITHACAdict = new IOdictionary
         (
@@ -76,66 +74,88 @@ fsiBasic::fsiBasic(int argc, char* argv[])
                 IOobject::NO_WRITE
             )
         );
-         #include "createFields.H" 
-        para = ITHACAparameters::getInstance(mesh, runTime);
-        //pointVectorField & PointDisplacement = const_cast<pointVectorField&>(mesh.objectRegistry::lookupObject<pointVectorField>("pointDisplacement"));               
+#include "createFields.H" 
+        para = ITHACAparameters::getInstance(mesh, runTime); 
+        point0 = mesh.points();  
+
+
+        Info << offline << endl;
+    /// Number of velocity modes to be calculated
+        NUmodesOut = para->ITHACAdict->lookupOrDefault<label>("NmodesUout", 15);
+        /// Number of pressure modes to be calculated
+        NPmodesOut = para->ITHACAdict->lookupOrDefault<label>("NmodesPout", 15);
+        /// Number of nut modes to be calculated
+        NNutModesOut = para->ITHACAdict->lookupOrDefault<label>("NmodesNutOut", 15);
+        /// Number of velocity modes used for the projection
+        NUmodes = para->ITHACAdict->lookupOrDefault<label>("NmodesUproj", 10);
+        /// Number of pressure modes used for the projection
+        NPmodes = para->ITHACAdict->lookupOrDefault<label>("NmodesPproj", 10);
+        /// Number of nut modes used for the projection
+        NNutModes = para->ITHACAdict->lookupOrDefault<label>("NmodesNutProj", 0);
+              
 }
 
-void fsiBasic::truthSolve3(List<scalar> mu_now, fileName folder)
+void fsiBasic::truthSolve(List<scalar> mu_now, fileName folder)
 {
 
     Time& runTime = _runTime();
     surfaceScalarField& phi = _phi();
     dynamicFvMesh& mesh = meshPtr();
-    #include "initContinuityErrs.H"
     fv::options& fvOptions = _fvOptions();
     pimpleControl& pimple = _pimple();
     volScalarField& p = _p();
     volVectorField& U = _U();
     IOMRFZoneList& MRF = _MRF();
+    //surfaceVectorField& Uf = _Uf();
     singlePhaseTransportModel& laminarTransport = _laminarTransport();
-
     instantList Times = runTime.times();
     runTime.setEndTime(finalTime);
+    //label BCind = 5;
+    //auto dd = sDRBMS().pointDisplacement().boundaryFieldRef()[BCind].patchInternalField()();// 
+    // sDRBMS().pointDisplacement().boundaryFieldRef()[BCind].patchInternalField() 
+    // //return a tmp<foam::field><Foam::vector<double>>; with ()() return a Foam::Field<vector<double>>
+    // std::cout << "/////////////////////////////////////////////////////////////" << "\n";
+    // Info << dd << "\n"; 
+    // auto ddtoeigen = Foam2Eigen::field2Eigen(dd);
 
     // Perform a TruthSolve
     runTime.setTime(Times[1], 1);
     runTime.setDeltaT(timeStep);
     nextWrite = startTime; // timeStep initialization
 
-    //****************************pimpleFoam algorithm******************************************
-    #include "addCheckCaseOptions.H"
-    #include "createDyMControls.H"
-    #include "createUfIfPresent.H"
-    #include "CourantNo.H"
-    #include "setInitialDeltaT.H"
+    dictionary dictCoeffs(dyndict->findDict("sixDoFRigidBodyMotionCoeffs"));
+    Foam::functionObjects::forces fomforces("fomforces", mesh, dictCoeffs);
+   
+    // /// construct a sixDoFRigidBodyMotionSolver object
+    // sixDoFRigidBodyMotionSolver sDRBMS(mesh, dynamicMeshDict);
+    // Info << sDRBMS.curPoints()[10000] << endl;
 
     turbulence->validate();
-    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-    // Export and store the initial conditions for velocity and pressure
-    ITHACAstream::exportSolution(U, name(counter), folder);
-    ITHACAstream::exportSolution(p, name(counter), folder);
-    ITHACAstream::writePoints(meshPtr().points(), folder, name(counter)+"/polyMesh");
+#include "createUfIfPresent.H"
+    // // Export and store the initial conditions for velocity and pressure
+    // ITHACAstream::exportSolution(U, name(counter), folder);
+    // ITHACAstream::exportSolution(p, name(counter), folder);
+    // ITHACAstream::exportSolution(sDRBMS().pointDisplacement(), name(counter), folder);
+    // ITHACAstream::writePoints(meshPtr().points(), folder, name(counter) + "/polyMesh/");
 
-    
-    std::ofstream of(folder + name(counter) + "/" +
-    	     runTime.timeName());
-    Ufield.append(U.clone());
-    Pfield.append(p.clone());
-    counter++;
-    nextWrite += writeEvery;
+    // std::ofstream of(folder + name(counter) + "/" + runTime.timeName());
+    // Ufield.append(U.clone());
+    // Pfield.append(p.clone());
+    // //Dfield.append(sDRBMS().pointDisplacement().clone()); // don't save the first snap of pdisp
+    // // initial condition for pointDisplacement because it is 0 and rbf will complain during 
+    // // interpolation.
+    // counter++;
+    // nextWrite += writeEvery;
 
     Info<< "\nStarting time loop\n" << endl;
 
     while (runTime.run())
     {
-        #include "readDyMControls.H"
-        #include "CourantNo.H"
-        #include "setDeltaT.H"
+
+#include "CourantNo.H"
+        
         runTime.setEndTime(finalTime);
         runTime++;
-
-        //++runTime;
 
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
@@ -144,9 +164,17 @@ void fsiBasic::truthSolve3(List<scalar> mu_now, fileName folder)
         {
             if (pimple.firstIter() || moveMeshOuterCorrectors)
             {
-                // Do any mesh changes
-                mesh.controlledUpdate();
+                fomforces.calcForcesMoment();
+                // fomforcex.append(fomforces.forceEff().x());
+                // fomforcey.append(fomforces.forceEff().y());
 
+                // Do any mesh changes
+                //mesh.controlledUpdate();
+                // The following line remplace the above controlledUpdate() method
+                sDRBMS().solve();
+
+                mesh.movePoints(sDRBMS().curPoints());
+                // std::cerr << "################"<< "Before six dof motion solver" << "#############"<< std::endl;
                 if (mesh.changing())
                 {
                     MRF.update();
@@ -157,7 +185,7 @@ void fsiBasic::truthSolve3(List<scalar> mu_now, fileName folder)
                         // from the mapped surface velocity
                         phi = mesh.Sf() & Uf();
 
-                             #include "correctPhi.H"
+#include "correctPhi.H"
 
                         // Make the flux relative to the mesh motion
                         fvc::makeRelative(phi, U);
@@ -165,17 +193,17 @@ void fsiBasic::truthSolve3(List<scalar> mu_now, fileName folder)
 
                     if (checkMeshCourantNo)
                     {
-                        #include "meshCourantNo.H"
+#include "meshCourantNo.H"
                     }
                 }
             }
 
-          #include "UEqn.H"
+#include "UEqn.H"
 
             // --- Pressure corrector loop
             while (pimple.correct())
             {
-              #include "pEqn.H"
+#include "pEqn.H"
             }
 
             if (pimple.turbCorr())
@@ -184,20 +212,32 @@ void fsiBasic::truthSolve3(List<scalar> mu_now, fileName folder)
                 turbulence->correct();
             }
         }
-        runTime.write();
+        std::cout << "/////////////" << runTime.deltaTValue() << "////////////" << std::endl;
+        scalar alffa = sDRBMS().motion().omega().z() / runTime.deltaTValue();
 
-        runTime.printExecutionTime(Info);
-        
-    //*****************************************end of pimpleFoam*****************************************
         if (checkWrite(runTime))
         {
+
+            fomforcex.append(fomforces.forceEff().x());
+            fomforcey.append(fomforces.forceEff().y());
+            centerofmassx.append(sDRBMS().motion().centreOfMass().x());
+            centerofmassy.append(sDRBMS().motion().centreOfMass().y());
+            centerofmassz.append(quaternion(sDRBMS().motion().orientation()).eulerAngles(quaternion::XYZ).z());
+            //omegaz.append(alffa );
+            // To append the linear velocities
+            velx.append(sDRBMS().motion().v().x());
+            vely.append(sDRBMS().motion().v().y());
+            velz.append(sDRBMS().motion().v().z());
             ITHACAstream::exportSolution(U, name(counter), folder);
             ITHACAstream::exportSolution(p, name(counter), folder);
-            ITHACAstream::writePoints(meshPtr().points(), folder, name(counter)+"/polyMesh");
-            std::ofstream of(folder + name(counter) + "/" +
-                             runTime.timeName());
+            ITHACAstream::exportSolution(sDRBMS().pointDisplacement(), name(counter), folder);
+            ITHACAstream::writePoints(meshPtr().points(), folder, name(counter) + "/polyMesh/");
+
+            std::ofstream of(folder + name(counter) + "/" + runTime.timeName());
             Ufield.append(U.clone());
             Pfield.append(p.clone());
+            Dfield.append(sDRBMS().pointDisplacement().clone());
+            
             counter++;
             nextWrite += writeEvery;
 
@@ -221,42 +261,37 @@ void fsiBasic::truthSolve3(List<scalar> mu_now, fileName folder)
 
     if (mu_samples.rows() == mu.cols())
     {
-        ITHACAstream::exportMatrix(mu_samples, "mu_samples", "eigen",
-                                   folder);
+        ITHACAstream::exportMatrix(mu_samples, "mu_samples", "eigen",folder);
     }
 
 } 
 
 
-void fsiBasic::liftSolve3()
+void fsiBasic::liftSolve()
 {
-    //std::cout << "342 my lift solve "<< std::endl;
+    
     for (label k = 0; k < inletIndex.rows(); k++)
     {
-        //std::cout << "345 my lift solve "<< std::endl;
+
         Time& runTime = _runTime();
-        //std::cout << "???????????? 234 my lift solve ???????????????????? "<< std::endl;
         Foam::dynamicFvMesh& mesh = meshPtr();
-        //std::cout << "***********236 my lift solve********* "<< std::endl;
         volScalarField& p = _p();
         volVectorField& U = _U();
+        //surfaceVectorField& Uf = _Uf();
         surfaceScalarField& phi = _phi();
-        //#include "initContinuityErrs.H"
         fv::options& fvOptions = _fvOptions();
         pimpleControl& pimple = _pimple();
         IOMRFZoneList& MRF = _MRF();
-        //std::cout << "354 my lift solve "<< std::endl;
-
+        //surfaceVectorField& Uf = _Uf();
+#include"createUfIfPresent.H"
         label BCind = inletIndex(k, 0);
         volVectorField Ulift("Ulift" + name(k), U);
         instantList Times = runTime.times();
         runTime.setTime(Times[1], 1);
-        pisoControl piso(mesh);
-        //Info << "Solving a lifting Problem" << endl;
+        //pisoControl piso(mesh);
         Vector<double> v1(0, 0, 0);
         v1[inletIndex(k, 1)] = 1;
         Vector<double> v0(0, 0, 0);
-        //std::cout << "365 my lift solve "<< std::endl;
 
         for (label j = 0; j < U.boundaryField().size(); j++)
         {
@@ -275,9 +310,7 @@ void fsiBasic::liftSolve3()
             assignIF(Ulift, v0);
             phi = linearInterpolate(Ulift) & mesh.Sf();
         }
-         //std::cout << "277 my lift solve "<< std::endl;
 
-        Info << "Constructing velocity pimple field Phi\n" << endl;
         volScalarField Phi
         (
             IOobject
@@ -306,8 +339,7 @@ void fsiBasic::liftSolve3()
         runTime.functionObjects().start();
         MRF.makeRelative(phi);
         adjustPhi(phi, Ulift, p);
-        #include "UEqn.H"
-        #include "createUfIfPresent.H"
+#include "UEqn.H"
         volScalarField rAU(1.0/UEqn.A());
         volVectorField HbyA(constrainHbyA(rAU*UEqn.H(), U, p));
         surfaceScalarField phiHbyA("phiHbyA", fvc::flux(HbyA));
@@ -321,7 +353,7 @@ void fsiBasic::liftSolve3()
             phiHbyA += MRF.zeroFilter(fvc::interpolate(rAU));
         }
 
-        MRF.makeRelative(phiHbyA);
+        // MRF.makeRelative(phiHbyA);
 
         if (p.needReference())
         {
@@ -357,11 +389,6 @@ void fsiBasic::liftSolve3()
             (
                 fvm::laplacian(rAtU(), p) == fvc::div(phiHbyA)
             );
-            // Added for reduced problem
-            //RedLinSysP = problem->Pmodes.project(pEqn, NmodesPproj);
-            //pEqn.solve();
-            //b = reducedProblem::solveLinearSys(RedLinSysP, b, presidual);
-            //problem->Pmodes.reconstruct(P, b, "p");
             pEqn.setReference(pRefCell, pRefValue);
 
             pEqn.solve(mesh.solver(p.select(pimple.finalInnerIter())));
@@ -385,5 +412,94 @@ void fsiBasic::liftSolve3()
              << endl;
         Ulift.write();
         liftfield.append(Ulift.clone());
+    }
+}
+
+void fsiBasic::restart()
+{
+
+    turbulence.clear();
+    _fvOptions.clear();
+    _laminarTransport.clear();
+    _p.clear();
+    _U.clear();
+    _phi.clear();
+    _Uf.clear();
+    _pointDisplacement.clear();
+    sDRBMS.clear();
+    argList& args = _args();
+    Time& runTime = _runTime();
+    runTime.setTime(0, 1);
+    // meshPtr().resetMotion();
+    meshPtr().movePoints(point0);    
+    pointField& pointOld = const_cast<pointField&> (meshPtr().oldPoints());
+    pointOld = point0;
+    _pimple.clear();
+    Foam::dynamicFvMesh& mesh = meshPtr();
+    _pimple = autoPtr<pimpleControl>
+                   (
+                       new pimpleControl
+                       (
+                           mesh
+                       )
+               );
+
+    // _p() = _p0();
+    // _U() = _U0();
+    // _phi() = _phi0();
+
+    //pimpleControl& pimple = _pimple();
+    
+#include "createFields.H" 
+}
+
+
+
+void fsiBasic::PodIpointDispl(Eigen::MatrixXd muu,  label NPdModes)
+{
+    if (NPdModes == 0)
+    {
+        NPdModes = Dmodes.size();
+    }
+
+    coeffL2 = ITHACAutilities::getCoeffs(Dfield, Dmodes, NPdModes, false);
+    samples.resize(NPdModes);
+    rbfSplines.resize(NPdModes);
+    Eigen::MatrixXd weights;
+  
+
+    for (label i = 0; i < NPdModes; i++) // i is the nnumber of th mode
+    {
+        word weightName = "wRBF_M" + name(i + 1);
+
+        if (ITHACAutilities::check_file("./ITHACAoutput/weights/" + weightName))
+        {
+            samples[i] = new SPLINTER::DataTable(1, 1);
+            for (label j = 0; j < coeffL2.cols();
+                    j++) // j is the number of the nut snapshot
+            {
+                samples[i]->addSample(muu.row(j), coeffL2(i, j));
+            }
+
+            ITHACAstream::ReadDenseMatrix(weights, "./ITHACAoutput/weights/", weightName);
+            rbfSplines[i] = new SPLINTER::RBFSpline(*samples[i],
+                                                    SPLINTER::RadialBasisFunctionType::GAUSSIAN, weights);
+            std::cout << "Constructing RadialBasisFunction for mode " << i + 1 << std::endl;
+        } 
+       
+        else
+        {
+            samples[i] = new SPLINTER::DataTable(1, 1);
+
+            for (label j = 0; j < coeffL2.cols();j++) // j is the number of the nut snapshot
+            {
+                samples[i]->addSample(muu.row(j), coeffL2(i, j));
+            }
+            rbfSplines[i] = new SPLINTER::RBFSpline(*samples[i],
+                                                    SPLINTER::RadialBasisFunctionType::GAUSSIAN);
+            ITHACAstream::SaveDenseMatrix(rbfSplines[i]->weights,
+                                          "./ITHACAoutput/weights/", weightName);
+            std::cout << "Constructing RadialBasisFunction for mode " << i + 1 << std::endl;
+        }
     }
 }

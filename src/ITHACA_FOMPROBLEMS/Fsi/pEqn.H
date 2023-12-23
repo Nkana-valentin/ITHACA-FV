@@ -91,10 +91,17 @@ p.relax();
 
 U = HbyA - rAtU*fvc::grad(p);
 U.correctBoundaryConditions();
+// std::cout << "============" << "the divergence of the velocity is "<< "\n";
+// Info<< max(mag(fvc::div(U))) << "\n";
 fvOptions.correct(U);
 
 // Correct Uf if the mesh is moving
 fvc::correctUf(Uf, U, phi);
+// {
+//      Uf = fvc::interpolate(U);
+//      surfaceVectorField n(mesh.Sf()/mesh.magSf());
+//      Uf += n*(phi/mesh.magSf() - (n & Uf));
+// }
 
 // Make the fluxes relative to the mesh motion
 fvc::makeRelative(phi, U);

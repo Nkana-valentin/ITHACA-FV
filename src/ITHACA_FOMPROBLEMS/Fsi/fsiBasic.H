@@ -43,7 +43,8 @@ SourceFiles
 #include "pimpleControl.H"
 #include "fvOptions.H"
 #include "CorrectPhi.H"
-
+#include "sixDoFRigidBodyMotionSolver.H"
+#include "sixDoFRigidBodyMotion.H"
 #include "unsteadyNS.H"
 #include "ITHACAstream.H"
 #include "ITHACAutilities.H"
@@ -60,13 +61,13 @@ SourceFiles
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 /*---------------------------------------------------------------------------*\
-                        Class fsiBasic Declaration
+                        Class FsiBasic Declaration
 \*---------------------------------------------------------------------------*/
 
 /// Implementation of a parametrized full order <b> unsteady NS problem </b> and preparation of the the reduced matrices for the online solve.
 /** In this class are implemented the methods for the offline solve of a unsteady NS problem
 and the for the generation of the reduced matrices for subsequent online solve, this class is a son
-of the steadyNS class */
+of the fsiBasic class */
 class fsiBasic: public unsteadyNS
 {
     public:
@@ -78,33 +79,69 @@ class fsiBasic: public unsteadyNS
         fsiBasic(int argc, char* argv[]);
         ~fsiBasic() {};
 
-        // Dummy variables to transform pimplefoam into a class
-        /// pimpleControl
-        //autoPtr<pimpleControl> _pimple;
-
-        // /// Turbulence model
-        // autoPtr<incompressible::turbulenceModel> turbulence;
-        /// Velocity field
-        // volVectorField& U;
-        // /// Pressure field
-        // volScalarField& p;
-        // ///
-        // surfaceScalarField& phi;
+        autoPtr<volScalarField> _p;
         // /// Dynamic mesh field
         autoPtr<Foam::dynamicFvMesh> meshPtr;
-        //autoPtr<dynamicFvMesh> _mesh;
+        /// pimpleControl
+        autoPtr<pimpleControl> _pimple;
+        autoPtr<sixDoFRigidBodyMotionSolver> sDRBMS;
+        vectorField point0;
+        autoPtr<surfaceVectorField> _Uf;
+        /// List of pointers used pointDisplacement modes
+        PtrList<pointVectorField> DFields;
+        /// List scalar for access the centerofmass
+        List<scalar> centerofmassx;
+        List<scalar> centerofmassy;
+        List<scalar> centerofmassz;
+        List<scalar> omegaz;
+
+         /// List scalar for access the velocities of the centerofmass
+        List<scalar> velx;
+        List<scalar> vely;
+        List<scalar> velz;
+        /// List of pointers used to form the displacement snapshots matrix
+        PtrList<pointVectorField> Dfield;
+        /// List of POD modes for pointDisplacement
+        pointVectorModes Dmodes;
+        /// pointDisplacement field
+        autoPtr<pointVectorField> _pointDisplacement;
+        /// List to save lift and drag forces
+        List<scalar> fomforcey;
+        List<scalar> fomforcex;
+        /// The matrix of L2 projection coefficients for pointDisplacement
+        Eigen::MatrixXd coeffL2;
+
+        Eigen::MatrixXd CylDispl;
+        Eigen::MatrixXd CylRot;
+        /// The vector of L2 projection coefficients for the pointDisplacement snapshot
+        Eigen::VectorXd pdCoeff;
+
+        /// Create a samples for interpolation
+        std::vector<SPLINTER::DataTable*> samples;
+
+        /// Create a RBF splines for interpolation
+        std::vector<SPLINTER::RBFSpline*> rbfSplines;
+
+        bool  correctPhi;
+        bool  checkMeshCourantNo;
+        bool  moveMeshOuterCorrectors;
+        IOdictionary* dyndict;
 
         // Functions
-
         //--------------------------------------------------------------------------
         /// @brief      Perform a truthsolve
         /// @param[in]  mu_now  The actual value of the parameter for this truthSolve. Used only
         /// to construct mu_interp matrix which is written out in a specified folder, also for par
         /// file in the Parameters folder.
         ///
-        void truthSolve3(List<scalar> mu_now,
+        void truthSolve(List<scalar> mu_now,
                         fileName folder = "./ITHACAoutput/Offline/");
-        void liftSolve3();
+        /// Perform a lift solve for the velocity field                
+        void liftSolve();
+        /// method to set all fields back to values in 0 folder
+        void restart();
+        ///  Method to construct RBFI for pointDisplacement
+        void PodIpointDispl(Eigen::MatrixXd muu,  label NPdModes);
 };        
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
