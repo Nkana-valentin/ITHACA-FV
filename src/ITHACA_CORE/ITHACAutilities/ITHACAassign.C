@@ -216,7 +216,7 @@ void assignBC(GeometricField<scalar, fvPatchField, volMesh>& s, label BC_ind,
         try
         {
             if (typeBC != "fixedGradient" && typeBC != "freestream" && typeBC != "empty"
-                    && typeBC != "zeroGradient" && typeBC != "fixedValue" && typeBC != "calculated"
+                    && typeBC != "zeroGradient" && typeBC != "fixedValue" && typeBC != "calculated" && typeBC != "slip" && typeBC != "movingWallVelocity"
                     && typeBC != "fixedFluxPressure" && typeBC != "processor"
                     && typeBC != "nutkWallFunction" && typeBC != "mixedEnergy")
             {
@@ -275,7 +275,7 @@ void assignBC(GeometricField<vector, fvPatchField, volMesh>& s, label BC_ind,
 void assignBC(GeometricField<vector, pointPatchField, pointMesh>& s, label BC_ind,
               Eigen::MatrixXd valueVec)
 {
-    std::cout << "============== inside assignBC Eigen::MatrixXd valueVec ==================="<< std::endl;
+    //std::cout << "============== inside assignBC Eigen::MatrixXd valueVec ==================="<< std::endl;
 
     label sizeBC = s.boundaryField()[BC_ind].size();
     M_Assert(sizeBC * 3 == valueVec.size(),
@@ -297,7 +297,7 @@ void assignBC(GeometricField<vector, pointPatchField, pointMesh>& s, label BC_in
 {
     label sizeBC = s.boundaryField()[BC_ind].size();
     List<double> valueList(sizeBC);
-    std::cout << "============== inside assignBC with value double ==================="<< std::endl;
+    //std::cout << "============== inside assignBC with value double ==================="<< std::endl;
     for (label i = 0; i < sizeBC; i++)
     {
         valueList[i] = value;
@@ -378,7 +378,7 @@ void assignBC(GeometricField<vector, fvPatchField, volMesh>& s, label BC_ind,
         try
         {
             if (typeBC != "fixedGradient" && typeBC != "freestream" && typeBC != "empty"
-                    && typeBC != "zeroGradient" && typeBC != "fixedValue" && typeBC != "calculated"
+                    && typeBC != "zeroGradient" && typeBC != "fixedValue" && typeBC != "calculated" && typeBC != "slip" && typeBC != "movingWallVelocity"
                     &&  typeBC != "processor")
             {
                 word message = "Pay attention, your typeBC " + typeBC + " for " + s.name() +
