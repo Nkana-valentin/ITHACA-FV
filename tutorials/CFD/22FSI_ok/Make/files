@@ -1,3 +1,0 @@
-22fsi.C
-
-EXE = $(FOAM_USER_APPBIN)/22fsi
