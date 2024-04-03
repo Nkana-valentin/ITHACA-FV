@@ -94,11 +94,6 @@ class fsiBasic: public unsteadyNS
         List<scalar> centerofmassy;
         List<scalar> centerofmassz;
         List<scalar> omegaz;
-
-         /// List scalar for access the velocities of the centerofmass
-        List<scalar> velx;
-        List<scalar> vely;
-        List<scalar> velz;
         /// List of pointers used to form the displacement snapshots matrix
         PtrList<pointVectorField> Dfield;
         /// List of POD modes for pointDisplacement

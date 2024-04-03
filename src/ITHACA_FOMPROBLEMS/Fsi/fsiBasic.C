@@ -110,13 +110,6 @@ void fsiBasic::truthSolve(List<scalar> mu_now, fileName folder)
     singlePhaseTransportModel& laminarTransport = _laminarTransport();
     instantList Times = runTime.times();
     runTime.setEndTime(finalTime);
-    //label BCind = 5;
-    //auto dd = sDRBMS().pointDisplacement().boundaryFieldRef()[BCind].patchInternalField()();// 
-    // sDRBMS().pointDisplacement().boundaryFieldRef()[BCind].patchInternalField() 
-    // //return a tmp<foam::field><Foam::vector<double>>; with ()() return a Foam::Field<vector<double>>
-    // std::cout << "/////////////////////////////////////////////////////////////" << "\n";
-    // Info << dd << "\n"; 
-    // auto ddtoeigen = Foam2Eigen::field2Eigen(dd);
 
     // Perform a TruthSolve
     runTime.setTime(Times[1], 1);
@@ -126,26 +119,9 @@ void fsiBasic::truthSolve(List<scalar> mu_now, fileName folder)
     dictionary dictCoeffs(dyndict->findDict("sixDoFRigidBodyMotionCoeffs"));
     Foam::functionObjects::forces fomforces("fomforces", mesh, dictCoeffs);
    
-    // /// construct a sixDoFRigidBodyMotionSolver object
-    // sixDoFRigidBodyMotionSolver sDRBMS(mesh, dynamicMeshDict);
-    // Info << sDRBMS.curPoints()[10000] << endl;
 
     turbulence->validate();
 #include "createUfIfPresent.H"
-    // // Export and store the initial conditions for velocity and pressure
-    // ITHACAstream::exportSolution(U, name(counter), folder);
-    // ITHACAstream::exportSolution(p, name(counter), folder);
-    // ITHACAstream::exportSolution(sDRBMS().pointDisplacement(), name(counter), folder);
-    // ITHACAstream::writePoints(meshPtr().points(), folder, name(counter) + "/polyMesh/");
-
-    // std::ofstream of(folder + name(counter) + "/" + runTime.timeName());
-    // Ufield.append(U.clone());
-    // Pfield.append(p.clone());
-    // //Dfield.append(sDRBMS().pointDisplacement().clone()); // don't save the first snap of pdisp
-    // // initial condition for pointDisplacement because it is 0 and rbf will complain during 
-    // // interpolation.
-    // counter++;
-    // nextWrite += writeEvery;
 
     Info<< "\nStarting time loop\n" << endl;
 
@@ -225,9 +201,9 @@ void fsiBasic::truthSolve(List<scalar> mu_now, fileName folder)
             centerofmassz.append(quaternion(sDRBMS().motion().orientation()).eulerAngles(quaternion::XYZ).z());
             //omegaz.append(alffa );
             // To append the linear velocities
-            velx.append(sDRBMS().motion().v().x());
-            vely.append(sDRBMS().motion().v().y());
-            velz.append(sDRBMS().motion().v().z());
+            // velx.append(sDRBMS().motion().v().x());
+            // vely.append(sDRBMS().motion().v().y());
+            // velz.append(sDRBMS().motion().v().z());
             ITHACAstream::exportSolution(U, name(counter), folder);
             ITHACAstream::exportSolution(p, name(counter), folder);
             ITHACAstream::exportSolution(sDRBMS().pointDisplacement(), name(counter), folder);
