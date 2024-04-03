@@ -1,29 +1,29 @@
 #include "UnsteadyNSPimpleNN.H"
 
-UnsteadyNSPimpleNN::UnsteadyNSPimpleNN() {}
-UnsteadyNSPimpleNN::UnsteadyNSPimpleNN(int argc, char* argv[])
-            :
-        fsiBasic(argc, argv)
-        {
+    UnsteadyNSPimpleNN::UnsteadyNSPimpleNN(){}
+    UnsteadyNSPimpleNN::UnsteadyNSPimpleNN(int argc, char* argv[])
+                :
+            fsiBasic(argc, argv)
+            {
 
-            _nut = autoPtr<volScalarField>
-               (
-                   new volScalarField
+                _nut = autoPtr<volScalarField>
                    (
-                       IOobject
+                       new volScalarField
                        (
-                           "nut",
-                           _runTime().timeName(),
-                           meshPtr(),
-                           IOobject::MUST_READ,
-                           IOobject::AUTO_WRITE
-                       ),
-                       meshPtr()
-                   )
-               );
-        }
+                           IOobject
+                           (
+                               "nut",
+                               _runTime().timeName(),
+                               meshPtr(),
+                               IOobject::MUST_READ,
+                               IOobject::AUTO_WRITE
+                           ),
+                           meshPtr()
+                       )
+                   );
+            }
 
-        UnsteadyNSPimpleNN::~UnsteadyNSPimpleNN(){}
+    UnsteadyNSPimpleNN::~UnsteadyNSPimpleNN(){}
      
 
     void UnsteadyNSPimpleNN::loadNet(word filename)
@@ -81,13 +81,24 @@ UnsteadyNSPimpleNN::UnsteadyNSPimpleNN(int argc, char* argv[])
         }
     }
     // Function to eval the NN once the input is provided
-    Eigen::MatrixXd UnsteadyNSPimpleNN::evalNet(Eigen::MatrixXd a)
+    Eigen::MatrixXd UnsteadyNSPimpleNN::evalNet(Eigen::MatrixXd& a)
     {
-        //std::cout << "a before scaling \t" << a << std::endl;
+        std::cout << "a before scaling \t" << a << std::endl;
+        //std::cout << "a =\t" << a << std::endl;
+
+        // scale_inp.transposeInPlace();
+        //         std::cout << "scale_inp \t" << scale_inp << std::endl;
+
+        // bias_inp.transposeInPlace();
+        //         std::cout << "bias_inp \t" << bias_inp << std::endl;
+
         a = a.array() * scale_inp.array() + bias_inp.array() ;
         //a = (a.array() - bias_inp.array()) / scale_inp.array();
-        //std::cout << "a after scaling \t" << a << std::endl;
+
         a.transposeInPlace();
+        //a = (a.array() - bias_inp.array()) / scale_inp.array();
+        std::cout << "a after scaling \t" << a << std::endl;
+        
         torch::Tensor xTensor = eigenMatrix2torchTensor(a);
         torch::Tensor out;
         std::vector<torch::jit::IValue> XTensorInp;
@@ -96,10 +107,10 @@ UnsteadyNSPimpleNN::UnsteadyNSPimpleNN(int argc, char* argv[])
         //std::cout << "out \t" << out << std::endl;
         Eigen::MatrixXd g = torchTensor2eigenMatrix<double>(out);
         g.transposeInPlace();
-        //std::cout << "g before rescaling \t" << g << std::endl;
+        std::cout << "g before rescaling \t" << g << std::endl;
         g = (g.array() - bias_out.array()) / scale_out.array();///????????/
         //g = g.array() * scale_out.array() + bias_out.array() ;
-        //std::cout << "g after rescaling \t" << g << std::endl;
+        std::cout << "g after rescaling \t" << g << std::endl;
         return g;
     }
 

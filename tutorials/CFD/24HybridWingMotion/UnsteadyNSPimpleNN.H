@@ -43,7 +43,7 @@ class UnsteadyNSPimpleNN : public fsiBasic
 		torch::jit::script::Module netTorchscript, lstmTorchscript;
 		 /// List of snapshots for the solution for eddy viscosity
 		PtrList<volScalarField> nutFields;
-		// PtrList<surfaceScalarField> phiFields;
+		PtrList<surfaceScalarField> phiFields;
 		/// List of POD modes for eddy viscosity
 		volScalarModes nutModes;
 		/// Eddy viscosity field
@@ -55,7 +55,7 @@ class UnsteadyNSPimpleNN : public fsiBasic
 		void loadNet(word filename);
 		void getTurbNN();
 
-		Eigen::MatrixXd evalNet(Eigen::MatrixXd a);
+		Eigen::MatrixXd evalNet(Eigen::MatrixXd& a);
 		Eigen::MatrixXd evalLstm(Eigen::MatrixXd a);
 
 

@@ -123,14 +123,7 @@ class reducedPimpleNNs
 
             Eigen::MatrixXd a = Eigen::VectorXd::Zero(NmodesUproj);
             Eigen::MatrixXd b = Eigen::VectorXd::Zero(NmodesPproj);
-            //Eigen::MatrixXd nutCoeff = Eigen::VectorXd::Random(NmodesNut);
-            //Eigen::MatrixXd nutCoeff = Eigen::VectorXd::Ones(NmodesNut);
-
-
             Eigen::MatrixXd nutCoeff = Eigen::VectorXd::Zero(NmodesNut);
-            //= Eigen::VectorXd::Zero(NmodesNutProj);
-            //nutCoeff = ITHACAutilities::getCoeffs(nut, nutModes, NmodesNut, true);
-//problem->restart();
             Time& runTime = problem->_runTime();
             dynamicFvMesh& mesh = problem->meshPtr();
             fv::options& fvOptions = problem->_fvOptions();
@@ -149,7 +142,7 @@ class reducedPimpleNNs
             runTime.setEndTime(finalTime);
 
 // To solve the RBFI system to obtain the weights
-PodIpointDispl(problem->coeffL2, problem->CylDispl, problem->CylRot, NmodesDproj);
+//PodIpointDispl(problem->coeffL2, problem->CylDispl, problem->CylRot, NmodesDproj);
 
             runTime.setTime(Times[1], 1);
             runTime.setDeltaT(timeStep);
@@ -191,42 +184,8 @@ PodIpointDispl(problem->coeffL2, problem->CylDispl, problem->CylRot, NmodesDproj
                     if (pimple.firstIter() || moveMeshOuterCorrectors)
                     {
             
-#include "test.H"
-                            romforces.calcForcesMoment();
-                            //problem->sDRBMS().solve();
-                            /// Solving the sixRigidMotion problem
-                            sDRBM.update
-                            (
-                                 firstIter,
-                                 ramp*(romforces.forceEff() + sDRBM.mass()*g.value()),
-                                 ramp
-                                *(
-                                    romforces.momentEff() + sDRBM.mass()*(sDRBM.momentArm() ^ g.value())
-                                 ),
-                                 t.deltaTValue(),
-                                 t.deltaT0Value()
-                            );
-
-                            rotationAngle = quaternion(sDRBM.orientation()).eulerAngles(quaternion::XYZ);
-
-                            std::vector<double> s(2);
-                            s[0] = sDRBM.centreOfRotation().y(); //sDRBM.centreOfMass().y(); 
-                            s[1] = rotationAngle.z();
-                            for (int i = 0; i < NmodesDproj; i++)
-                            {
-                                //Online value of the parameter
-                                pdCoeffNew(i) = problem->rbfSplines[i]->eval(s);
-                            }
-                            
-                            Dmodes.reconstruct(pointDisplacement, pdCoeffNew, "pointDisplacement");
-                            problem->sDRBMS().pointDisplacement().primitiveFieldRef() = pointDisplacement.primitiveFieldRef();
-                            pointConstraints::New
-                            (
-                                problem->sDRBMS().pointDisplacement().mesh()
-
-                            ).constrainDisplacement(problem->sDRBMS().pointDisplacement() );
-                            //// Move the new current points
-                            mesh.movePoints(problem->sDRBMS().curPoints());
+//#include "test.H"
+                            mesh.controlledUpdate();
                             if (mesh.changing())
                             {
                                 MRF.update();
@@ -270,8 +229,8 @@ PodIpointDispl(problem->coeffL2, problem->CylDispl, problem->CylRot, NmodesDproj
                         volVectorField gradpfull = -fvc::grad(p);
                         Eigen::MatrixXd projGrad = Umodes.project(gradpfull, NmodesUproj);
                         RedLinSysU[1] = RedLinSysU[1] + projGrad;
-                        //a = RedLinSysU[0].householderQr().solve(RedLinSysU[1]);
-                        a = RedLinSysU[0].colPivHouseholderQr().solve(RedLinSysU[1]);
+                        a = RedLinSysU[0].householderQr().solve(RedLinSysU[1]);
+                        //a = RedLinSysU[0].colPivHouseholderQr().solve(RedLinSysU[1]);
                         //volVectorField U("U", Ubar[0]);
                         Umodes.reconstruct(U, a, "U");
                         //solve(UEqn == -fvc::grad(p));
@@ -319,8 +278,8 @@ PodIpointDispl(problem->coeffL2, problem->CylDispl, problem->CylRot, NmodesDproj
                             //pEqn.solve(mesh.solver(p.select(pimple.finalInnerIter()))); //p
                             RedLinSysP = Pmodes.project(pEqn, NmodesPproj, "G" );
                             /// Solve for the reduced coefficient for pressure
-                            //b = RedLinSysP[0].householderQr().solve(RedLinSysP[1]); 
-                            b = RedLinSysP[0].colPivHouseholderQr().solve(RedLinSysP[1]);
+                            b = RedLinSysP[0].householderQr().solve(RedLinSysP[1]); 
+                            //b = RedLinSysP[0].colPivHouseholderQr().solve(RedLinSysP[1]);
                             Pmodes.reconstruct(p, b, "p");
 
                            if (pimple.finalNonOrthogonalIter())
@@ -540,7 +499,7 @@ int main(int argc, char* argv[])
     example.inletIndex(0, 1) = 0;
     // Time parameters: We can use Ioodictionnary to access time parameters
     example.startTime  = 0;
-    example.finalTime  = 0.5; //1;//0.5; //0.5; //0.05; //0.5;  
+    example.finalTime  = 1;//0.5; //0.5; //0.05; //0.5;  
     example.timeStep   = 5e-06; //2e-06
     example.writeEvery = 5e-04; //0.00001; //1e-02; //5e-04, 5e-03
     // //Perform the offline solve
@@ -553,7 +512,7 @@ int main(int argc, char* argv[])
     if(!ITHACAutilities::check_folder("./ITHACAoutput/DataFromFoam"))
     {
 
-        mkDir("ITHACAoutput/DataFromRom");
+        mkDir("ITHACAoutput/DataFromFom");
         Eigen::VectorXd fomforcex = Foam2Eigen::field2Eigen(example.fomforcex);
         //ITHACAstream::exportMatrix(fomforcex, "fomforcex", "python","./ITHACAoutput/DataFromFoam/");
         cnpy::save(fomforcex, "./ITHACAoutput/DataFromFoam/fomforcex.npy");
@@ -587,14 +546,14 @@ int main(int argc, char* argv[])
         cnpy::load(online.CylDispl, "./ITHACAoutput/DataFromFoam/Rx.npy");
     }
    
-    int const p = 401;
+    int const p = 1001;
     int const q = 1;
 
-    int i = 300;
-    int j = 0; //
+    int i = 0;
+    int j = 0;
 
-    int s = 300;
-    int e = 700;
+    int s = 0;
+    int e = 1000;
 
     Eigen::MatrixXd plunge = online.CylDispl.block<p,q>(i,j); //online.CylDispl.topRows<500>();
     Eigen::MatrixXd pitch  = online.CylRot.block<p,q>(i,j);   // online.CylRot.topRows<500>();
@@ -603,8 +562,8 @@ int main(int argc, char* argv[])
     online.CylDispl = plunge;
     online.CylRot   = pitch;
 
-    Info << "plunge.size() = \t" <<  plunge.size() << endl;
-    Info << "pitch.size() = \t" <<   pitch.size() << endl;
+    // Info << "plunge.size() = \t" <<  plunge.size() << endl;
+    // Info << "pitch.size() = \t" <<   pitch.size() << endl;
 
     //std::cout << "online.CylDispl = \n" << online.CylDispl  << std::endl;
     // std::cout << "plunge = \t" <<   online.CylDispl << std::endl;
@@ -631,13 +590,13 @@ int main(int argc, char* argv[])
         Dfield.append(example.Dfield[i].clone() );
     }
 
-    Info << "Ufield.size() = \t" <<  Ufield.size() << endl;
-    Info << "Pfield.size() = \t" <<  Pfield.size() << endl;
-    Info << "nutFields.size() = \t" <<  nutFields.size() << endl;
-    Info << "Dfield.size() = \t" <<  Dfield.size() << endl;
+    // Info << "Ufield.size() = \t" <<  Ufield.size() << endl;
+    // Info << "Pfield.size() = \t" <<  Pfield.size() << endl;
+    // Info << "nutFields.size() = \t" <<  nutFields.size() << endl;
+    // Info << "Dfield.size() = \t" <<  Dfield.size() << endl;
 
 
-    exit(0);
+    // exit(0);
 
     if(!ITHACAutilities::check_folder("./ITHACAoutput/POD/1"))
     {
@@ -648,14 +607,14 @@ int main(int argc, char* argv[])
                                     example.podex, 0, 0,NmodesPout);
         ITHACAPOD::getModes(nutFields, online.nutModes, example._nut().name(),
                                     example.podex, 0, 0, NmodesNutOut); 
-       ITHACAPOD::getModes(Dfield, online.Dmodes, online._pointDisplacement().name(),
-                       example.podex, 0, 0, NmodesDout);
+       // ITHACAPOD::getModes(Dfield, online.Dmodes, online._pointDisplacement().name(),
+       //                 example.podex, 0, 0, NmodesDout);
     }
 
     /// Create the NNs for nut
     online.getTurbNN();
     /// Get temporal coefficients for pointDisplacement fields
-    online.coeffL2 = ITHACAutilities::getCoeffs(Dfield, online.Dmodes, NmodesDproj, false);
+    //online.coeffL2 = ITHACAutilities::getCoeffs(Dfield, online.Dmodes, NmodesDproj, false);
 
     // exit(0);
 
@@ -741,320 +700,3 @@ int main(int argc, char* argv[])
 
     exit(0);
 }
-
-
-
-
-
-
-
-
-// using namespace ITHACAtorch::torch2Eigen;
-// using namespace torch::indexing;
-
-// class UnsteadyNSPimpleNN : public fsiBasic
-// {
-//     public:
-//         /// Constructor
-//         UnsteadyNSPimpleNN();
-//         UnsteadyNSPimpleNN(int argc, char* argv[])
-//             :
-//             fsiBasic(argc, argv)
-//         {
-
-//             _nut = autoPtr<volScalarField>
-//                (
-//                    new volScalarField
-//                    (
-//                        IOobject
-//                        (
-//                            "nut",
-//                            _runTime().timeName(),
-//                            meshPtr(),
-//                            IOobject::MUST_READ,
-//                            IOobject::AUTO_WRITE
-//                        ),
-//                        meshPtr()
-//                    )
-//                );
-//         };
-
-//         Eigen::MatrixXd bias_inp;
-//         Eigen::MatrixXd scale_inp;
-//         Eigen::MatrixXd bias_out;
-//         Eigen::MatrixXd scale_out;
-//         Eigen::MatrixXd coeffL2U, coeffL2Nut;
-//         //Eigen::MatrixXd zmomentforces, yliftforces;
-//         torch::Tensor coeffL2U_tensor;
-//         torch::Tensor coeffL2Nut_tensor;
-//         /// List of POD coefficients
-//         List<Eigen::MatrixXd> CoeffU, CoeffP,  CoeffsNut; 
-//         torch::jit::script::Module netTorchscript, lstmTorchscript;
-//          /// List of snapshots for the solution for eddy viscosity
-//         PtrList<volScalarField> nutFields;
-//         PtrList<surfaceScalarField> phiFields;
-//         /// List of POD modes for eddy viscosity
-//         volScalarModes nutModes;
-//         /// Eddy viscosity field
-//         autoPtr<volScalarField> _nut;
-//         List<scalar> Rx, Ry, Rz, Rt;
-     
-
-//         void loadNet(word filename)
-//         {
-//             std::string Msg = filename +
-//                               " is not existing, please run the training stage of the net with the correct number of modes for U and Nut";
-//             M_Assert(ITHACAutilities::check_file(filename), Msg.c_str());
-//             netTorchscript = torch::jit::load(filename);
-//             cnpy::load(bias_inp, "ITHACAoutput/NN/minInp_" + name(NUmodes) + "_" + name(NNutModes) + ".npy");
-//             cnpy::load(scale_inp, "ITHACAoutput/NN/scaleInp_" + name(NUmodes) + "_" + name(NNutModes) + ".npy");
-//             cnpy::load(bias_out, "ITHACAoutput/NN/minOut_" + name(NUmodes) + "_" + name(NNutModes) + ".npy");
-//             cnpy::load(scale_out, "ITHACAoutput/NN/scaleOut_" + name(NUmodes) + "_" + name(NNutModes) + ".npy");
-//             netTorchscript.eval();
-//         }
-
-//         void loadLstmNet(word filename)
-//         {
-//             std::string Msg = filename + " is not existing, please run the training stage of  the Lstm for Nut";
-//             M_Assert(ITHACAutilities::check_file(filename), Msg.c_str());
-//             lstmTorchscript = torch::jit::load(filename);
-//             cnpy::load(bias_inp, "ITHACAoutput/NN/LstmMinInp_"  +   name(NNutModes) + ".npy");
-//             cnpy::load(scale_inp, "ITHACAoutput/NN/LstmScaleInp_"   + name(NNutModes) + ".npy");
-//             cnpy::load(bias_out, "ITHACAoutput/NN/LstmMinOut_"     +  name(NNutModes) + ".npy");
-//             cnpy::load(scale_out, "ITHACAoutput/NN/LstmScaleOut_"    +  name(NNutModes) + ".npy");
-//             lstmTorchscript.eval();
-//         }
-
-//         // This function computes the coefficients which are later used for training
-//         void getTurbNN()
-//         {
-//             if (!ITHACAutilities::check_folder("ITHACAoutput/NN/coeffs"))
-//             {
-//                 mkDir("ITHACAoutput/NN/coeffs");
-//                 /// Read Fields for Train
-//                 PtrList<volVectorField> UfieldData;
-//                 PtrList<volScalarField> PfieldData;
-//                 PtrList<volScalarField> nutFieldsData;
-//                 ITHACAstream::read_fields(UfieldData, _U(), "./ITHACAoutput/Offline/");
-//                 ITHACAstream::read_fields(PfieldData, _p(), "./ITHACAoutput/Offline/");
-//                 ITHACAstream::read_fields(nutFieldsData, _nut(), "./ITHACAoutput/Offline/");
-//                 /// Compute the coefficients for train
-//                 std::cout << "Computing the coefficients for U" << std::endl;
-//                 Eigen::MatrixXd coeffL2U_data = ITHACAutilities::getCoeffs(UfieldData,Umodes, 0, true);
-//                 std::cout << "Computing the coefficients for p" << std::endl;
-//                 Eigen::MatrixXd coeffL2P_data = ITHACAutilities::getCoeffs(PfieldData,Pmodes,0, true);
-//                 std::cout << "Computing the coefficients for nuT" << std::endl;
-//                 Eigen::MatrixXd coeffL2Nut_data = ITHACAutilities::getCoeffs(nutFieldsData, nutModes, 0, true);
-//                 coeffL2U_data.transposeInPlace();
-//                 coeffL2P_data.transposeInPlace();
-//                 coeffL2Nut_data.transposeInPlace();
-//                 //CoeffPointDisplacement_data.transposeInPlace();
-//                 cnpy::save(coeffL2U_data, "ITHACAoutput/NN/coeffs/coeffL2U.npy");
-//                 cnpy::save(coeffL2P_data, "ITHACAoutput/NN/coeffs/coeffL2P.npy");
-//                 cnpy::save(coeffL2Nut_data, "ITHACAoutput/NN/coeffs/coeffL2Nut.npy");
-//             }
-//         }
-//         // Function to eval the NN once the input is provided
-//         Eigen::MatrixXd evalNet(Eigen::MatrixXd a)
-//         {
-//             //std::cout << "a before scaling \t" << a << std::endl;
-//             a = a.array() * scale_inp.array() + bias_inp.array() ;
-//             //a = (a.array() - bias_inp.array()) / scale_inp.array();
-//             //std::cout << "a after scaling \t" << a << std::endl;
-//             a.transposeInPlace();
-//             torch::Tensor xTensor = eigenMatrix2torchTensor(a);
-//             torch::Tensor out;
-//             std::vector<torch::jit::IValue> XTensorInp;
-//             XTensorInp.push_back(xTensor);
-//             out = netTorchscript.forward(XTensorInp).toTensor();
-//             //std::cout << "out \t" << out << std::endl;
-//             Eigen::MatrixXd g = torchTensor2eigenMatrix<double>(out);
-//             g.transposeInPlace();
-//             //std::cout << "g before rescaling \t" << g << std::endl;
-//             g = (g.array() - bias_out.array()) / scale_out.array();///????????/
-//             //g = g.array() * scale_out.array() + bias_out.array() ;
-//             //std::cout << "g after rescaling \t" << g << std::endl;
-//             return g;
-//         }
-
-
-//         Eigen::MatrixXd evalLstm(Eigen::MatrixXd a)
-//         {
-
-//             torch::Tensor x_reshaped, predictions;
-//             //a = a.array() * scale_inp.array() + bias_inp.array() ;
-//             std::cout << "a before scaling \t" << a << std::endl;
-//             a = a.array() * scale_inp.array() + bias_inp.array() ;
-//             //a = (a.array() - bias_inp.array()) / scale_inp.array();
-//             std::cout << "a after scaling \t" << a << std::endl;
-//             //predictions.torch::Tensor::to(torch::kLong);
-//             a.transposeInPlace();
-//             torch::Tensor x = eigenMatrix2torchTensor(a);
-//             std::cout << "a To Tensor: " << x << std::endl;
-//             x_reshaped = torch::reshape(x, {1, 1, a.cols()});
-//             x_reshaped.to(torch::kLong);
-//             //torch::Tensor s, predictions;
-//             std::vector<torch::jit::IValue> XTensorInp;
-//             XTensorInp.push_back(x_reshaped);
-//             predictions = lstmTorchscript.forward(XTensorInp).toTensor();
-//             //y_reshaped = torch::reshape(predictions, {1, 1, a.cols()});
-//             torch::Tensor out = predictions.squeeze(0); 
-//             std::cout << "predictions" <<  predictions << std::endl;
-//             Eigen::MatrixXd g = torchTensor2eigenMatrix<double>(predictions);
-//             g.transposeInPlace();
-//             std::cout << "g before rescaling \t" << g << std::endl;
-//             g = (g.array() - bias_out.array()) / scale_out.array();
-//             std::cout << "g after rescaling: " << g << std::endl;
-
-//             g.array();
-
-//             return g;
-//         }
-
-//         void truthSolve(List<scalar> mu_now, fileName folder = "./ITHACAoutput/Offline/")
-//         {
-
-//             Time& runTime = _runTime();
-//             dynamicFvMesh& mesh = meshPtr();
-//             fv::options& fvOptions = _fvOptions();
-//             pimpleControl& pimple = _pimple();
-//             volScalarField& p = _p();
-//             volVectorField& U = _U();
-//             surfaceScalarField& phi = _phi();
-//             IOMRFZoneList& MRF = _MRF();
-//             singlePhaseTransportModel& laminarTransport = _laminarTransport();
-//             autoPtr<incompressible::turbulenceModel> turbulence;
-//             turbulence = autoPtr<incompressible::turbulenceModel>
-//             (
-//                  incompressible::turbulenceModel::New(U, phi, laminarTransport)
-//             );
-
-//             volScalarField& nut  = _nut(); 
-
-//             instantList Times = runTime.times();
-//             runTime.setEndTime(finalTime);
-//             runTime.setTime(Times[1], 1);
-//             const scalar ramp = 1.0;
-//             runTime.setDeltaT(timeStep);
-//             nextWrite = startTime; // timeStep initialization
-//             dictionary dictCoeffs(dyndict->findDict("sixDoFRigidBodyMotionCoeffs"));
-//             sixDoFRigidBodyMotion sDRBM(dictCoeffs, dictCoeffs, runTime);
-//             Foam::functionObjects::forces fomforces("fomforces", mesh, dictCoeffs);
-//             vector rotationAngle(Zero);
-         
-// #include "createUfIfPresent.H"
-
-//             turbulence->validate();
-//             Info<< "\nStarting time loop\n" << endl;
-//             while (runTime.run())
-//             {
-
-// //#include "readDyMControls.H"
-// #include "CourantNo.H"
-// //#include "setDeltaT.H"
-//                 runTime.setEndTime(finalTime);
-//                 ++runTime;
-//                 // Info<< "Value = " << runTime.deltaTValue() << nl << endl;
-//                 Info<< "Time = " << runTime.timeName() << nl << endl;
-//                 // --- Pressure-velocity PIMPLE corrector loop
-//                 while (pimple.loop())
-//                 {
-//                     if (pimple.firstIter() || moveMeshOuterCorrectors)
-//                     {
-//                         // Do any mesh changes
-//                         //mesh.controlledUpdate();
-//                         // The following line remplace the above controlledUpdate() method
-//                         fomforces.calcForcesMoment();
-//                         sDRBMS().solve();
-//                         rotationAngle = quaternion(sDRBMS().motion().orientation()).eulerAngles(quaternion::XYZ);
-//                         mesh.movePoints(sDRBMS().curPoints());
-//                         if (mesh.changing())
-//                         {
-//                             MRF.update();
-
-//                             if (correctPhi)
-//                             {
-//                                 // Calculate absolute flux
-//                                 // from the mapped surface velocity
-//                                 phi = mesh.Sf() & Uf();
-
-// #include "correctPhi.H"
-//                                 // Make the flux relative to the mesh motion
-//                                 fvc::makeRelative(phi, U);
-//                             }
-
-//                             if (checkMeshCourantNo)
-//                             {
-// #include "meshCourantNo.H"
-//                             }
-//                         }
-//                     }
-
-// #include "UEqn.H"
-//                     // --- Pressure corrector loop
-//                     while (pimple.correct())
-//                     {
-// #include "pEqn.H"
-//                     }
-
-//                     if (pimple.turbCorr())
-//                     {
-//                         laminarTransport.correct();
-//                         turbulence->correct();
-//                     }
-//                 }
-//                 nut = turbulence->nut();
-             
-//                 if (checkWrite(runTime))
-//                 {
-//                     fomforcey.append(fomforces.forceEff().y());
-//                     fomforcex.append(fomforces.forceEff().x());
-
-//                     Rx.append(sDRBMS().motion().centreOfRotation().y() ); 
-//                     centerofmassy.append(sDRBMS().motion().centreOfMass().y() ); 
-//                     Ry.append(rotationAngle.z() );
-//                     Rz.append(fomforces.momentEff().z());
-//                     //Radius.append(magSqr(R) );                   
-//                     ITHACAstream::exportSolution(U, name(counter), folder);
-//                     ITHACAstream::exportSolution(p, name(counter), folder);
-//                     ITHACAstream::exportSolution(nut, name(counter), folder);
-//                     ITHACAstream::exportSolution(phi, name(counter), folder);
-//                     ITHACAstream::exportSolution(sDRBMS().pointDisplacement(), name(counter), folder);
-//                     ITHACAstream::writePoints(meshPtr().points(), folder, name(counter) + "/polyMesh/");
-
-//                     std::ofstream of(folder + name(counter) + "/" + runTime.timeName());
-//                     Ufield.append(U.clone());
-//                     Pfield.append(p.clone());
-//                     nutFields.append(turbulence->nut() );
-//                     phiFields.append(phi.clone());
-//                     Dfield.append(sDRBMS().pointDisplacement().clone());
-//                     counter++;
-//                     nextWrite += writeEvery;
-
-//                     writeMu(mu_now);
-//                     // --- Fill in the mu_samples with parameters (time, mu) to be used for the PODI sample points
-//                     mu_samples.conservativeResize(mu_samples.rows() + 1, mu_now.size() + 1);
-//                     mu_samples(mu_samples.rows() - 1, 0) = atof(runTime.timeName().c_str());
-
-//                     for (label i = 0; i < mu_now.size(); i++)
-//                     {
-//                         mu_samples(mu_samples.rows() - 1, i + 1) = mu_now[i];
-//                     }
-//                 }
-             
-
-//             }
-//             // Resize to Unitary if not initialized by user (i.e. non-parametric problem)
-//             if (mu.cols() == 0)
-//             {
-//                 mu.resize(1, 1);
-//             }
-
-//             if (mu_samples.rows() == mu.cols())
-//             {
-//                 ITHACAstream::exportMatrix(mu_samples, "mu_samples", "eigen",folder);
-//             }
-
-//         } 
-
-// };

@@ -26,9 +26,9 @@ NmodePUout 50;
 NmodesPproj 5; //5?????
 
 NmodesNutOut 50; //50
-NmodesNutProj 1; //10 //15
+NmodesNutProj 2; //10 //15
 
-NmodesDout 10;
+NmodesDout 3;
 NmodesDproj 1; //3
 
 debug 1;
