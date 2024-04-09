@@ -114,41 +114,41 @@ class Net:
                 optimizer.zero_grad() 
                 train_loss.backward()
                 optimizer.step() # to update the weights
-            print(f'Finished epoch {epoch}, latest loss {train_loss}')    
-                #batch_losses.append(train_loss.item())
-            #train_loss = np.mean(batch_losses)
+                #print(f'Finished epoch {epoch}, latest loss {train_loss}')    
+                batch_losses.append(train_loss.item())
+            train_loss = np.mean(batch_losses)
             # evaluate accuracy on test set
-            # batch_test_losses = []
-            # model.eval()
-            # for inputs_test, labels_test in testloader:
-            #     #inputs_test, labels_test =  inputs_test.to(device), labels_test.to(device)
-            #     outputs_test = model(inputs_test)
-            #     #print("outputs_test", outputs_test)
-            #     test_loss = loss_fn(outputs_test, labels_test)
-            #     batch_test_losses.append(test_loss.item())
-            # test_loss = np.mean(batch_test_losses)
-            # if epoch%100 == 0:
-            #     print(epoch, "train_loss \t" , train_loss) #### "\t", "test_loss \t", test_loss)
-            #     tplot.append(epoch)
-            #     lossplottrain.append(train_loss)
-            #     #lossplottest.append(test_loss)
-        ### Compute accuracy
-        with torch.no_grad():
-            y = model(X_train) ## Validation
-            y_pred = model(X_test) ## Validation
-            yy = y_pred.detach().numpy()
-            zz = y.detach().numpy()
-            k = 1
-            plt.plot(np.arange(len(zz[:, k]), 1001), yy[:, k], 'b.',linestyle='dashed',  label='$Validation$')
-            plt.plot(np.arange(len(zz[:, k])), zz[:, k], 'r.', linestyle='dashed', label='$Truth $'+str(k))
-            plt.tight_layout()
-            plt.legend(ncol=2, loc='upper left', fontsize=20, bbox_to_anchor=(0.95, -0.25))
-            plt.savefig("NNs_" + str(self.Nu) + "_" + str(self.Nnut) +  ".pdf")
-            plt.show()
-            # print("y_pred = ", y_pred)
-            # print("y_train", y_train)
-            # acc = y_pred-y_train
-            # print(acc)
+            batch_test_losses = []
+            model.eval()
+            for inputs_test, labels_test in testloader:
+                #inputs_test, labels_test =  inputs_test.to(device), labels_test.to(device)
+                outputs_test = model(inputs_test)
+                #print("outputs_test", outputs_test)
+                test_loss = loss_fn(outputs_test, labels_test)
+                batch_test_losses.append(test_loss.item())
+            test_loss = np.mean(batch_test_losses)
+            if (epoch+1)%100 == 0:
+                print(epoch, "train_loss \t" , train_loss) #### "\t", "test_loss \t", test_loss)
+                tplot.append(epoch)
+                lossplottrain.append(train_loss)
+                #lossplottest.append(test_loss)
+        # ### Compute accuracy
+        # with torch.no_grad():
+        #     y = model(X_train) ## Validation
+        #     y_pred = model(X_test) ## Validation
+        #     yy = y_pred.detach().numpy()
+        #     zz = y.detach().numpy()
+        #     k = 1
+        #     plt.plot(np.arange(len(zz[:, k]), 1001), yy[:, k], 'b.',linestyle='dashed',  label='$Validation$')
+        #     plt.plot(np.arange(len(zz[:, k])), zz[:, k], 'r.', linestyle='dashed', label='$Truth $'+str(k))
+        #     plt.tight_layout()
+        #     plt.legend(ncol=2, loc='upper left', fontsize=20, bbox_to_anchor=(0.95, -0.25))
+        #     plt.savefig("NNs_" + str(self.Nu) + "_" + str(self.Nnut) +  ".pdf")
+        #     plt.show()
+        #     # print("y_pred = ", y_pred)
+        #     # print("y_train", y_train)
+        #     # acc = y_pred-y_train
+        #     # print(acc)
 
         return tplot,lossplottrain,lossplottest,model,scaling 
 

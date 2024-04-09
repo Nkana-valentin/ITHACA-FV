@@ -512,7 +512,7 @@ int main(int argc, char* argv[])
     if(!ITHACAutilities::check_folder("./ITHACAoutput/DataFromFoam"))
     {
 
-        mkDir("ITHACAoutput/DataFromFom");
+        mkDir("ITHACAoutput/DataFromFoam");
         Eigen::VectorXd fomforcex = Foam2Eigen::field2Eigen(example.fomforcex);
         //ITHACAstream::exportMatrix(fomforcex, "fomforcex", "python","./ITHACAoutput/DataFromFoam/");
         cnpy::save(fomforcex, "./ITHACAoutput/DataFromFoam/fomforcex.npy");
@@ -637,6 +637,7 @@ int main(int argc, char* argv[])
     // online.coeffL2 = ITHACAutilities::getCoeffs(example.Dfield, online.Dmodes, NmodesDproj, false);
     /// Load the network by training the model.
     online.loadNet("ITHACAoutput/NN/Net_" + name(example.NUmodes) + "_" + name(example.NNutModes) + ".pt");
+    exit(0);
     //online.loadLstmNet("ITHACAoutput/NN/LstmNet_" + name(example.NNutModes) + ".pt");
 
     /// ############### contruct the reduced the class object ###################

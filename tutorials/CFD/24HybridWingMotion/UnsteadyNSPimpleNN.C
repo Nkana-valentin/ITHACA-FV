@@ -32,10 +32,23 @@
                           " is not existing, please run the training stage of the net with the correct number of modes for U and Nut";
         M_Assert(ITHACAutilities::check_file(filename), Msg.c_str());
         netTorchscript = torch::jit::load(filename);
-        cnpy::load(bias_inp, "ITHACAoutput/NN/minInp_" + name(NUmodes) + "_" + name(NNutModes) + ".npy");
-        cnpy::load(scale_inp, "ITHACAoutput/NN/scaleInp_" + name(NUmodes) + "_" + name(NNutModes) + ".npy");
+
+        // cnpy::load(bias_inp, "ITHACAoutput/NN/minInp_" + name(NUmodes) + "_" + name(NNutModes) + ".npy");
+        // cnpy::load(scale_inp, "ITHACAoutput/NN/scaleInp_" + name(NUmodes) + "_" + name(NNutModes) + ".npy");
+        // cnpy::load(bias_out, "ITHACAoutput/NN/minOut_" + name(NUmodes) + "_" + name(NNutModes) + ".npy");
+        // cnpy::load(scale_out, "ITHACAoutput/NN/scaleOut_" + name(NUmodes) + "_" + name(NNutModes) + ".npy");
+         cnpy::load(bias_inp, "ITHACAoutput/NN/minInp_" + name(NUmodes) + "_" + name(NNutModes) + ".npy");
+         std::cout << "bias_inp = \t" << bias_inp << std::endl;
+
+         cnpy::load(scale_inp, "ITHACAoutput/NN/scaleInp_" + name(NUmodes) + "_" + name(NNutModes) + ".npy");
+         std::cout << "scale_inp\t" << scale_inp << std::endl;
+
         cnpy::load(bias_out, "ITHACAoutput/NN/minOut_" + name(NUmodes) + "_" + name(NNutModes) + ".npy");
+        std::cout << "bias_out = \t" << bias_out << std::endl;
         cnpy::load(scale_out, "ITHACAoutput/NN/scaleOut_" + name(NUmodes) + "_" + name(NNutModes) + ".npy");
+        std::cout << "scale_out\t" << scale_out << std::endl;
+
+
         netTorchscript.eval();
     }
 
