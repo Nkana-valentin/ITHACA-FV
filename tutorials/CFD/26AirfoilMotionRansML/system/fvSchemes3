@@ -1,0 +1,116 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2106                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvSchemes;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+/*
+ddtSchemes
+{
+    default         backward; //CrankNicolson 0.9; //;
+}
+
+gradSchemes
+{
+    default         Gauss linear;
+    //default         cellLimited Gauss linear 1;
+    grad(p)         Gauss linear; //leastSquares; //fourth
+    grad(U)         cellLimited Gauss linear 1; //Gauss linear;
+    //grad(U)         Gauss linear;
+}
+
+divSchemes
+{
+    default         none;
+
+    div(phi,U)       Gauss linearUpwindV grad(U);
+    //div(phi,U)      Gauss vanLeer;
+
+    turbulence      Gauss limitedLinear 1;
+    div(phi,k)      $turbulence;
+    div(phi,omega)  $turbulence;
+    //div(U)          Gauss vanLeer;
+
+    div((nuEff*dev2(T(grad(U))))) Gauss linear;
+}
+
+laplacianSchemes
+{
+
+    default        Gauss linear limited 0.5;
+}
+
+interpolationSchemes
+{
+    default         linear;
+}
+
+snGradSchemes
+{
+    //default         corrected;
+    default         limited 0.5;
+}*/
+ddtSchemes
+{
+  default Euler; //0-0.333
+}
+
+gradSchemes
+{
+    default cellLimited Gauss linear 1;
+    grad(U) cellLimited Gauss linear 1;
+    //grad(p) leastSquares; //avoid adding limiters to pressure
+}
+
+divSchemes
+{
+        default none;
+        div(phi,U) Gauss linearUpwind grad(U);
+        turbulence      Gauss limitedLinear 1;
+        //turbulence        Gauss linearUpwind; 
+        div(phi,k)      $turbulence;
+        div(phi,omega)  $turbulence ;
+        // div(phi,omega) Gauss linearUpwind default;
+        // div(phi,k) Gauss linearUpwind default;
+        div((nuEff*dev(T(grad(U))))) Gauss linear;
+        div((nuEff*dev2(T(grad(U)))))   Gauss linear;
+}
+
+laplacianSchemes
+{
+ default Gauss linear limited 0.5;
+}
+
+interpolationSchemes
+{
+   default linear;
+}
+
+snGradSchemes
+{
+  default limited 0.5;
+}
+fluxRequired
+{
+    default         no;
+    p;
+    Phi;
+}
+
+
+wallDist
+{
+    method          meshWave;
+}
+
+
+// ************************************************************************* //
